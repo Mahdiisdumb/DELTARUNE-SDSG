@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Vinetrap</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #000;
+        color-scheme: dark;
+      }
+    </style>
+    <link rel="stylesheet" href="../shared/fonts.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <script>
+      (function rememberSetupPage() {
+        try {
+          localStorage.setItem("startpage", "setup/index.html");
+        } catch (error) {
+          console.warn("Unable to save the setup start page:", error);
+        }
+
+        try {
+          if (window.parent && window.parent !== window && typeof window.parent.setContainerStartPage === "function") {
+            window.parent.setContainerStartPage("setup/index.html");
+          }
+        } catch (error) {
+          console.warn("Unable to sync the setup start page with the container:", error);
+        }
+      })();
+    </script>
+    <div id="stage-shell" tabindex="0" data-autofocus-root>
+      <div id="stage-content">
+        <canvas
+          id="survey-screen"
+          width="640"
+          height="480"
+        ></canvas>
+        <div id="choice-overlay" aria-hidden="true"></div>
+      </div>
+    </div>
+    <script>
+      (function focusSetupStage() {
+        function focusStage() {
+          const stage = document.getElementById("stage-shell");
+
+          if (!stage) {
+            return;
+          }
+
+          try {
+            window.focus();
+            stage.focus({ preventScroll: true });
+          } catch (error) {
+            try {
+              stage.focus();
+            } catch (nestedError) {
+              console.warn("Unable to focus the setup stage:", nestedError);
+            }
+          }
+        }
+
+        window.addEventListener("load", () => {
+          requestAnimationFrame(() => {
+            focusStage();
+          });
+        });
+      })();
+    </script>
+    <div id="save-code-modal" aria-hidden="true" hidden>
+      <div id="save-code-dialog" role="dialog" aria-modal="true" aria-label="Import save code">
+        <p id="save-code-copy">Import save data from another device by uploading it at <a href="https://save.vinetrap.net" target="_blank" rel="noopener noreferrer">save.vinetrap.net</a> and typing the given code here!</p>
+        <input
+          id="save-code-input"
+          type="text"
+          autocomplete="off"
+          autocapitalize="off"
+          autocorrect="off"
+          spellcheck="false"
+          aria-label="Save import code"
+          placeholder="XXXX-XXXX"
+        >
+        <p id="save-code-status" aria-live="polite" hidden></p>
+        <div id="save-code-actions">
+          <button id="save-code-confirm" type="button">Import</button>
+          <button id="save-code-cancel" type="button">Cancel</button>
+        </div>
+      </div>
+    </div>
+    <input id="save-import-input" type="file" multiple hidden>
+
+    <script src="../shared/gate.js"></script>
+    <script src="/shared/local-gate.js"></script>
+    <script src="./savetransfer.js"></script>
+    <script src="./savecodec.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>

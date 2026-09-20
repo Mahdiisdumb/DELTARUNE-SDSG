@@ -1,0 +1,164 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#loadah {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+  background: #000;
+  color: #f0f0f0;
+  opacity: 1;
+}
+
+#loadah:focus,
+#loadah:focus-visible,
+#loadah-stage:focus,
+#loadah-stage:focus-visible {
+  outline: none;
+}
+
+#loadah-stage {
+  position: relative;
+  width: min(100vw, calc(100vh * 4 / 3));
+  height: min(100vh, calc(100vw * 3 / 4));
+  --loadah-ui-width: 82%;
+  --loadah-ui-bottom: 11.75%;
+  --loadah-ui-gap: 8px;
+  --loadah-ui-padding-x: 6px;
+  --loadah-timer-size: 16px;
+  --loadah-status-size: 18px;
+  --loadah-progress-height: 24px;
+  --loadah-first-run-width: 88%;
+  --loadah-first-run-size: 24px;
+  --loadah-first-run-gap: 18px;
+  --loadah-first-run-padding-y: 48px;
+  --loadah-first-run-padding-x: 36px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid #fff;
+  box-sizing: border-box;
+}
+
+#loadah-first-run {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--loadah-first-run-padding-y) var(--loadah-first-run-padding-x);
+  box-sizing: border-box;
+  pointer-events: none;
+  background: #000;
+  color: #fff;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+
+#loadah-first-run.is-fading {
+  opacity: 0;
+}
+
+.loadah-first-run-inner {
+  width: min(var(--loadah-first-run-width), 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--loadah-first-run-gap);
+}
+
+.loadah-first-run-line {
+  width: 100%;
+  margin: 0;
+  text-align: center;
+  font: 400 var(--loadah-first-run-size)/1.45 monospace;
+  text-shadow: 0 0 10px #000, 0 0 18px #000;
+}
+
+#loadah-ui {
+  position: absolute;
+  left: 50%;
+  bottom: var(--loadah-ui-bottom);
+  z-index: 2;
+  width: var(--loadah-ui-width);
+  display: grid;
+  gap: var(--loadah-ui-gap);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+#loadah-timer {
+  min-height: 1em;
+  padding: 0 var(--loadah-ui-padding-x);
+  text-align: center;
+  font: 700 var(--loadah-timer-size)/1 monospace;
+  letter-spacing: 0.04em;
+}
+
+#tobyload {
+  position: absolute;
+  left: 50%;
+  bottom: -0.8%;
+  width: 20%;
+  height: auto;
+  aspect-ratio: 128 / 506;
+  transform: translateX(-50%) translateY(-500px);
+  image-rendering: pixelated;
+}
+
+#progressbar-container {
+  width: 100%;
+  height: var(--loadah-progress-height);
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 2px solid #fff;
+  background: #000;
+}
+
+#progressbar {
+  position: relative;
+  width: 0%;
+  height: 100%;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+#progressbar::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  border: 2px solid #000;
+}
+
+#loadahstatus {
+  min-height: 1.2em;
+  padding: 0 var(--loadah-ui-padding-x);
+  text-align: center;
+  word-break: break-all;
+  font: 400 var(--loadah-status-size)/1.18 monospace;
+}
+
+#loadah-timer[hidden] {
+  display: none;
+}
+
+#loadah-first-run[hidden] {
+  display: none;
+}
+
+#loadah.hidden {
+  display: none;
+}

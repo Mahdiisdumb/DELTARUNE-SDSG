@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Vinetrap</title>
+    <meta name="theme-color" content="#000000">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-title" content="DELTARUNE">
+    <link rel="manifest" href="./manifest.webmanifest">
+    <link id="app-favicon" rel="icon" href="/play/fav.ico?v=1">
+    <link rel="shortcut icon" href="/play/fav.ico?v=1">
+    <link rel="apple-touch-icon" sizes="512x512" href="./app/assets/pwa.png">
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+        overscroll-behavior: none;
+        touch-action: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      }
+
+      body.shell-gamepad-mode,
+      body.shell-gamepad-mode * {
+        cursor: none !important;
+      }
+
+      #app-frame {
+        width: 100vw;
+        height: 100vh;
+        border: 0;
+        display: block;
+        background: #000;
+        outline: none;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+
+      #app-frame:focus,
+      #app-frame:focus-visible {
+        outline: none;
+      }
+
+    </style>
+  </head>
+  <body>
+    <iframe
+      id="app-frame"
+      title="Project Vinetrap Container"
+      allow="fullscreen"
+      referrerpolicy="same-origin"
+      tabindex="-1"
+    ></iframe>
+
+    <script src="/shared/gate.js"></script>
+    <script src="/shared/local-gate.js"></script>
+    <script>
+      (function initAppShell() {
+        const defaultStartPage = "verif/index.html";
+        const patchoverPage = "patchover.html";
+        const patchoverSeenStorageKey = "patchover_v7_03_seen";
+        const defaultTitle = "Project Vinetrap";
+        const verificationTitle = "please verify...!";
+        const defaultFaviconHref = "/play/fav.ico?v=1";
+        const verificationFaviconHref = "/verif/verif.ico?v=1";
+        const deviceProfileStorageKey = "device_profile";
+        const consoleFamilyStorageKey = "console_family";
+        const frame = document.getElementById("app-frame");
+        let faviconLink = document.getElementById("app-favicon");
+        const shellGamepadState = new Map();
+        let shellInputMode = "pointer";
+        let shellGamepadLoopId = 0;
+        const forwardedGlobalNames = [
+          "SurveyProgram",
+          "SurveyDebug",
+          "SAVEManager",
+          "AppMenu",
+          "AppMenuDebug",
+          "survey_program",
+          "survey_debug",
+          "save_manager",
+          "app_menu",
+          "app_menu_debug",
+          "gate",
+          "ownership_gate",
+        ];
+
+        function normalizeStartPage(value) {
+          const trimmedValue = String(value || "").trim();
+
+          if (!trimmedValue) {
+            return defaultStartPage;
+          }
+
+          if (
+            trimmedValue.startsWith("http://") ||
+            trimmedValue.startsWith("https://") ||
+            trimmedValue.startsWith("//") ||
+            trimmedValue.startsWith("javascript:") ||
+            trimmedValue.startsWith("data:")
+          ) {
+            return defaultStartPage;
+          }
+
+          let normalizedValue = trimmedValue.replace(/^\.?\//, "");
+          const normalizedBareValue = normalizedValue.replace(/\/+$/, "");
+
+          if (normalizedBareValue === "setup") {
+            normalizedValue = "setup/index.html";
+          }
+
+          if (normalizedBareValue === "i") {
+            normalizedValue = "i/index.html";
+          }
+
+          if (normalizedBareValue === "app") {
+            normalizedValue = "app/index.html";
+          }
+
+          if (normalizedBareValue === "verif") {
+            normalizedValue = "verif/index.html";
+          }
+
+          if (normalizedBareValue === "d") {
+            normalizedValue = "d/index.html";
+          }
+
+          if (normalizedBareValue === "play") {
+            normalizedValue = "play/play/index.html";
+          }
+
+          if (normalizedBareValue === "patchover") {
+            normalizedValue = patchoverPage;
+          }
+
+          if (normalizedValue === patchoverPage || normalizedValue.startsWith(`${patchoverPage}?`)) {
+            return normalizedValue;
+          }
+
+          if (!/^(setup|i|app|verif|d|play)\/.+/.test(normalizedValue)) {
+            return defaultStartPage;
+          }
+
+          return normalizedValue;
+        }
+
+        function saveStartPage(value) {
+          const normalizedValue = normalizeStartPage(value);
+
+          if (normalizedValue === patchoverPage || normalizedValue.startsWith(`${patchoverPage}?`)) {
+            return normalizedValue;
+          }
+
+          if (/^verif\/.+/.test(normalizedValue)) {
+            return normalizedValue;
+          }
+
+          if (normalizedValue === "app/offline/index.html") {
+            return normalizedValue;
+          }
+
+          if (/^play\/.+/.test(normalizedValue)) {
+            return normalizedValue;
+          }
+
+          try {
+            localStorage.setItem("startpage", normalizedValue);
+          } catch (error) {
+            console.warn("Unable to save start page:", error);
+          }
+
+          return normalizedValue;
+        }
+
+        function setFrameSourceForPage(pagePath) {
+          const resolvedFrameSrc = `/${String(pagePath).replace(/^\/+/, "")}`;
+
+          if (frame.getAttribute("src") !== resolvedFrameSrc) {
+            frame.setAttribute("src", resolvedFrameSrc);
+          }
+        }
+
+        function loadStartPage(value) {
+          const normalizedValue = saveStartPage(value);
+          setFrameSourceForPage(normalizedValue);
+          return normalizedValue;
+        }
+
+        function loadStartPageWithoutRemember(value) {
+          const normalizedValue = normalizeStartPage(value);
+          setFrameSourceForPage(normalizedValue);
+          return normalizedValue;
+        }
+
+        function shouldShowPatchover(_initialPage) {
+          try {
+            if (localStorage.getItem("setup_complete") !== "1") {
+              return false;
+            }
+
+            return localStorage.getItem(patchoverSeenStorageKey) !== "1";
+          } catch (_storage_error) {
+            return false;
+          }
+        }
+
+        function getPatchoverPageForInitialPage(initialPage) {
+          const returnTarget = normalizeStartPage(initialPage);
+          return `${patchoverPage}?return=${encodeURIComponent(returnTarget)}`;
+        }
+
+        function getLoadedPageWindow() {
+          try {
+            return frame.contentWindow || null;
+          } catch (error) {
+            console.warn("Unable to read the iframe window:", error);
+            return null;
+          }
+        }
+
+        function runInLoadedPage(source) {
+          const pageWindow = getLoadedPageWindow();
+
+          if (!pageWindow || typeof pageWindow.eval !== "function") {
+            throw new Error("The iframe page is not ready yet.");
+          }
+
+          return pageWindow.eval(String(source));
+        }
+
+        function createPageProxy() {
+          return new Proxy(
+            {},
+            {
+              get(_target, property) {
+                const pageWindow = getLoadedPageWindow();
+
+                if (!pageWindow) {
+                  return undefined;
+                }
+
+                const value = pageWindow[property];
+
+                if (typeof value === "function") {
+                  return value.bind(pageWindow);
+                }
+
+                return value;
+              },
+              set(_target, property, value) {
+                const pageWindow = getLoadedPageWindow();
+
+                if (!pageWindow) {
+                  return false;
+                }
+
+                pageWindow[property] = value;
+                return true;
+              },
+              has(_target, property) {
+                const pageWindow = getLoadedPageWindow();
+                return Boolean(pageWindow && property in pageWindow);
+              },
+            }
+          );
+        }
+
+        function installConsoleBridge() {
+          for (const name of forwardedGlobalNames) {
+            if (Object.getOwnPropertyDescriptor(window, name)) {
+              continue;
+            }
+
+            Object.defineProperty(window, name, {
+              configurable: true,
+              enumerable: false,
+              get() {
+                return getLoadedPageWindow()?.[name];
+              },
+              set(value) {
+                const pageWindow = getLoadedPageWindow();
+
+                if (!pageWindow) {
+                  return;
+                }
+
+                pageWindow[name] = value;
+              },
+            });
+          }
+        }
+
+        function isConsoleShellMode() {
+          try {
+            const deviceProfile = localStorage.getItem(deviceProfileStorageKey);
+            const consoleFamily = localStorage.getItem(consoleFamilyStorageKey);
+
+            if (deviceProfile === "console" || consoleFamily === "xbox" || consoleFamily === "playstation") {
+              return true;
+            }
+          } catch (error) {
+            console.warn("Unable to read the console shell preference:", error);
+          }
+
+          const userAgent = String(navigator.userAgent || "");
+          return /Xbox|PlayStation/i.test(userAgent);
+        }
+
+        function isNintendoGamepad(id) {
+          return /nintendo|switch|joy-con|joycon|pro controller/i.test(String(id || ""));
+        }
+
+        function readShellGamepadInput() {
+          const frameInput = {
+            anyPressed: false,
+          };
+
+          if (!navigator.getGamepads) {
+            return frameInput;
+          }
+
+          const connectedIndices = new Set();
+          const gamepads = navigator.getGamepads();
+
+          for (const gamepad of gamepads) {
+            if (!gamepad || !gamepad.connected) {
+              continue;
+            }
+
+            connectedIndices.add(gamepad.index);
+            const isNintendoLayout = isNintendoGamepad(gamepad.id);
+            const confirmIndex = isNintendoLayout ? 1 : 0;
+            const cancelIndex = isNintendoLayout ? 0 : 1;
+            const axes = gamepad.axes || [];
+            const buttons = gamepad.buttons || [];
+            const currentState = {
+              leftHeld: Boolean(buttons[14]?.pressed) || axes[0] < -0.5,
+              rightHeld: Boolean(buttons[15]?.pressed) || axes[0] > 0.5,
+              upHeld: Boolean(buttons[12]?.pressed) || axes[1] < -0.5,
+              downHeld: Boolean(buttons[13]?.pressed) || axes[1] > 0.5,
+              confirmHeld: Boolean(buttons[confirmIndex]?.pressed),
+              cancelHeld: Boolean(buttons[cancelIndex]?.pressed),
+            };
+            const previousState = shellGamepadState.get(gamepad.index) || {
+              leftHeld: false,
+              rightHeld: false,
+              upHeld: false,
+              downHeld: false,
+              confirmHeld: false,
+              cancelHeld: false,
+            };
+
+            frameInput.anyPressed ||= (
+              (currentState.leftHeld && !previousState.leftHeld)
+              || (currentState.rightHeld && !previousState.rightHeld)
+              || (currentState.upHeld && !previousState.upHeld)
+              || (currentState.downHeld && !previousState.downHeld)
+              || (currentState.confirmHeld && !previousState.confirmHeld)
+              || (currentState.cancelHeld && !previousState.cancelHeld)
+            );
+
+            shellGamepadState.set(gamepad.index, currentState);
+          }
+
+          for (const gamepadIndex of Array.from(shellGamepadState.keys())) {
+            if (!connectedIndices.has(gamepadIndex)) {
+              shellGamepadState.delete(gamepadIndex);
+            }
+          }
+
+          return frameInput;
+        }
+
+        function ensureLoadedPageGamepadStyle() {
+          const pageDocument = frame.contentDocument;
+
+          if (!pageDocument?.documentElement) {
+            return null;
+          }
+
+          let styleNode = pageDocument.getElementById("drweb-shell-gamepad-style");
+
+          if (!styleNode) {
+            styleNode = pageDocument.createElement("style");
+            styleNode.id = "drweb-shell-gamepad-style";
+            styleNode.textContent = `
+              html.drweb-shell-gamepad-mode,
+              html.drweb-shell-gamepad-mode *,
+              body.drweb-shell-gamepad-mode,
+              body.drweb-shell-gamepad-mode * {
+                cursor: none !important;
+              }
+            `;
+            pageDocument.head?.appendChild(styleNode);
+          }
+
+          return styleNode;
+        }
+
+        function getLoadedPageFocusTarget() {
+          const pageDocument = frame.contentDocument;
+
+          if (!pageDocument) {
+            return null;
+          }
+
+          return (
+            pageDocument.querySelector("[data-autofocus-root]")
+            || pageDocument.getElementById("canvas")
+            || pageDocument.querySelector("canvas")
+            || pageDocument.body
+            || null
+          );
+        }
+
+        function syncShellInputMode() {
+          const isGamepadMode = shellInputMode === "gamepad";
+          document.body.classList.toggle("shell-gamepad-mode", isGamepadMode);
+
+          const pageDocument = frame.contentDocument;
+
+          if (pageDocument?.documentElement) {
+            ensureLoadedPageGamepadStyle();
+            pageDocument.documentElement.classList.toggle("drweb-shell-gamepad-mode", isGamepadMode);
+            pageDocument.body?.classList.toggle("drweb-shell-gamepad-mode", isGamepadMode);
+          }
+
+          if (isGamepadMode) {
+            requestAnimationFrame(() => {
+              focusLoadedPage();
+            });
+          }
+        }
+
+        function setShellInputMode(nextMode) {
+          if (!isConsoleShellMode()) {
+            return;
+          }
+
+          shellInputMode = nextMode === "gamepad" ? "gamepad" : "pointer";
+          syncShellInputMode();
+        }
+
+        function startShellGamepadLoop() {
+          const tick = () => {
+            if (readShellGamepadInput().anyPressed) {
+              setShellInputMode("gamepad");
+            }
+
+            shellGamepadLoopId = window.requestAnimationFrame(tick);
+          };
+
+          if (shellGamepadLoopId !== 0) {
+            window.cancelAnimationFrame(shellGamepadLoopId);
+          }
+
+          shellGamepadLoopId = window.requestAnimationFrame(tick);
+        }
+
+        function focusLoadedPage() {
+          const pageWindow = getLoadedPageWindow();
+          const focusTarget = getLoadedPageFocusTarget();
+
+          if (focusTarget) {
+            if (focusTarget === frame.contentDocument?.body && !focusTarget.hasAttribute("tabindex")) {
+              focusTarget.setAttribute("tabindex", "-1");
+            }
+
+            try {
+              focusTarget.focus({ preventScroll: true });
+            } catch (error) {
+              try {
+                focusTarget.focus();
+              } catch (_nestedFocusError) {
+                console.warn("Unable to focus the loaded page target:", _nestedFocusError);
+              }
+            }
+          }
+
+          try {
+            pageWindow?.focus();
+          } catch (error) {
+            console.warn("Unable to focus the iframe window:", error);
+          }
+
+          if (!focusTarget) {
+            try {
+              frame.focus({ preventScroll: true });
+            } catch (error) {
+              try {
+                frame.focus();
+              } catch (nestedError) {
+                console.warn("Unable to focus the iframe container:", nestedError);
+              }
+            }
+          }
+        }
+
+        function setShellTitle(nextTitle) {
+          document.title = String(nextTitle || defaultTitle);
+        }
+
+        function setShellFavicon(nextHref) {
+          if (!document.head) {
+            return;
+          }
+
+          const resolvedHref = nextHref
+            ? new URL(String(nextHref), window.location.origin).toString()
+            : "data:,";
+          const existingFaviconLinks = Array.from(
+            document.head.querySelectorAll("link[rel~='icon'], link[rel='shortcut icon']"),
+          );
+
+          for (const existingLink of existingFaviconLinks) {
+            existingLink.remove();
+          }
+
+          const iconLink = document.createElement("link");
+          iconLink.id = "app-favicon";
+          iconLink.rel = "icon";
+          iconLink.type = "image/x-icon";
+          iconLink.href = resolvedHref;
+
+          const shortcutIconLink = document.createElement("link");
+          shortcutIconLink.rel = "shortcut icon";
+          shortcutIconLink.type = "image/x-icon";
+          shortcutIconLink.href = resolvedHref;
+
+          document.head.appendChild(iconLink);
+          document.head.appendChild(shortcutIconLink);
+          faviconLink = iconLink;
+        }
+
+        function getLoadedPagePath() {
+          try {
+            const currentPath = frame.contentWindow?.location?.pathname;
+
+            if (!currentPath) {
+              return "";
+            }
+
+            return currentPath.replace(/^\//, "");
+          } catch (error) {
+            console.warn("Unable to read the loaded page path:", error);
+            return "";
+          }
+        }
+
+        function syncShellChrome() {
+          const relativePath = getLoadedPagePath();
+          const normalizedPath = normalizeStartPage(relativePath);
+          let nextTitle = defaultTitle;
+
+          if (/^verif(?:\/|$)/.test(relativePath) || /^verif\/.+/.test(normalizedPath)) {
+            nextTitle = verificationTitle;
+            setShellFavicon(verificationFaviconHref);
+            setShellTitle(nextTitle);
+            return;
+          }
+
+          try {
+            const loadedTitle = frame.contentDocument?.title?.trim();
+
+            if (loadedTitle) {
+              nextTitle = loadedTitle;
+            }
+          } catch (error) {
+            console.warn("Unable to read the iframe title:", error);
+          }
+
+          setShellFavicon(defaultFaviconHref);
+          setShellTitle(nextTitle);
+        }
+
+        function getFullscreenElement() {
+          return (
+            document.fullscreenElement ||
+            document.webkitFullscreenElement ||
+            document.mozFullScreenElement ||
+            document.msFullscreenElement ||
+            null
+          );
+        }
+
+        function isContainerFullscreen() {
+          return getFullscreenElement() === frame;
+        }
+
+        function rememberFullscreenState(isFullscreen) {
+          try {
+            localStorage.setItem("container_fullscreen", isFullscreen ? "1" : "0");
+          } catch (error) {
+            console.warn("Unable to save fullscreen state:", error);
+          }
+        }
+
+        function requestFrameFullscreen() {
+          if (frame.requestFullscreen) {
+            return frame.requestFullscreen();
+          }
+
+          if (frame.webkitRequestFullscreen) {
+            return frame.webkitRequestFullscreen();
+          }
+
+          if (frame.mozRequestFullScreen) {
+            return frame.mozRequestFullScreen();
+          }
+
+          if (frame.msRequestFullscreen) {
+            return frame.msRequestFullscreen();
+          }
+
+          return Promise.resolve();
+        }
+
+        function exitAnyFullscreen() {
+          if (document.exitFullscreen) {
+            return document.exitFullscreen();
+          }
+
+          if (document.webkitExitFullscreen) {
+            return document.webkitExitFullscreen();
+          }
+
+          if (document.mozCancelFullScreen) {
+            return document.mozCancelFullScreen();
+          }
+
+          if (document.msExitFullscreen) {
+            return document.msExitFullscreen();
+          }
+
+          return Promise.resolve();
+        }
+
+        function notifyLoadedPageOfResize() {
+          const pageWindow = getLoadedPageWindow();
+
+          if (!pageWindow) {
+            return;
+          }
+
+          const emitResize = () => {
+            try {
+              pageWindow.dispatchEvent(new Event("resize"));
+            } catch (error) {
+              console.warn("Unable to dispatch resize to the loaded page:", error);
+            }
+
+            try {
+              if (typeof pageWindow.ensureAspectRatio === "function") {
+                pageWindow.ensureAspectRatio();
+              }
+            } catch (error) {
+              console.warn("Unable to run ensureAspectRatio in the loaded page:", error);
+            }
+          };
+
+          requestAnimationFrame(emitResize);
+          setTimeout(() => requestAnimationFrame(emitResize), 100);
+          setTimeout(() => requestAnimationFrame(emitResize), 250);
+        }
+
+        async function setContainerFullscreen(nextState) {
+          const shouldEnter = Boolean(nextState);
+
+          if (shouldEnter === isContainerFullscreen()) {
+            notifyLoadedPageOfResize();
+            focusLoadedPage();
+            return shouldEnter;
+          }
+
+          if (shouldEnter) {
+            await requestFrameFullscreen();
+          } else {
+            await exitAnyFullscreen();
+          }
+
+          rememberFullscreenState(shouldEnter);
+          notifyLoadedPageOfResize();
+          focusLoadedPage();
+          return shouldEnter;
+        }
+
+        async function toggleContainerFullscreen() {
+          return setContainerFullscreen(!isContainerFullscreen());
+        }
+
+        function syncStartPageFromFrame() {
+          try {
+            const currentPath = frame.contentWindow?.location?.pathname;
+
+            if (!currentPath) {
+              return;
+            }
+
+            const relativePath = currentPath.replace(/^\//, "");
+            const normalizedValue = normalizeStartPage(relativePath);
+
+            if (
+              relativePath === normalizedValue
+              && relativePath !== patchoverPage
+              && normalizedValue !== "app/offline/index.html"
+              && !/^verif\/.+/.test(normalizedValue)
+              && !/^play\/.+/.test(normalizedValue)
+            ) {
+              saveStartPage(relativePath);
+            }
+          } catch (error) {
+            console.warn("Unable to read the current iframe page:", error);
+          }
+        }
+
+        function installShellTouchCapture() {
+          const stopTouchSelection = (event) => {
+            if (event.cancelable) {
+              event.preventDefault();
+            }
+            focusLoadedPage();
+          };
+
+          document.addEventListener("touchstart", stopTouchSelection, { passive: false, capture: true });
+          document.addEventListener("touchmove", stopTouchSelection, { passive: false, capture: true });
+          frame.addEventListener("touchstart", stopTouchSelection, { passive: false, capture: true });
+          frame.addEventListener("touchmove", stopTouchSelection, { passive: false, capture: true });
+        }
+
+        window.setContainerStartPage = saveStartPage;
+        window.goToContainerPage = loadStartPage;
+        window.goToContainerPageWithoutRemember = loadStartPageWithoutRemember;
+        window.getContainerPageWindow = getLoadedPageWindow;
+        window.runInContainerPage = runInLoadedPage;
+        window.ContainerPage = createPageProxy();
+        installConsoleBridge();
+        installShellTouchCapture();
+        
+        frame.addEventListener("load", () => {
+          syncStartPageFromFrame();
+          syncShellChrome();
+          syncShellInputMode();
+          requestAnimationFrame(() => {
+            focusLoadedPage();
+          });
+          notifyLoadedPageOfResize();
+        });
+
+        window.addEventListener("blur", () => {
+          shellGamepadState.clear();
+        });
+
+        document.addEventListener("fullscreenchange", () => {
+          rememberFullscreenState(isContainerFullscreen());
+          notifyLoadedPageOfResize();
+        });
+        document.addEventListener("webkitfullscreenchange", () => {
+          rememberFullscreenState(isContainerFullscreen());
+          notifyLoadedPageOfResize();
+        });
+        document.addEventListener("mozfullscreenchange", () => {
+          rememberFullscreenState(isContainerFullscreen());
+          notifyLoadedPageOfResize();
+        });
+        document.addEventListener("MSFullscreenChange", () => {
+          rememberFullscreenState(isContainerFullscreen());
+          notifyLoadedPageOfResize();
+        });
+
+        startShellGamepadLoop();
+
+        (async () => {
+          let storedStartPage = defaultStartPage;
+
+          try {
+            storedStartPage = localStorage.getItem("startpage") || defaultStartPage;
+          } catch (error) {
+            console.warn("Unable to read the saved start page:", error);
+          }
+
+          let gateResult = {
+            verified: false,
+          };
+
+          try {
+            if (window.ownership_gate?.check_saved_ownership) {
+              gateResult = await window.ownership_gate.check_saved_ownership();
+            }
+          } catch (error) {
+            console.warn("Unable to check the saved verification state:", error);
+          }
+
+          const initialPage = window.ownership_gate?.resolve_start_page
+            ? window.ownership_gate.resolve_start_page(storedStartPage, gateResult)
+            : normalizeStartPage(storedStartPage);
+
+          if (/^verif\/.+/.test(initialPage)) {
+            setShellTitle(verificationTitle);
+            setShellFavicon(verificationFaviconHref);
+          } else {
+            setShellTitle(defaultTitle);
+            setShellFavicon(defaultFaviconHref);
+          }
+
+          const shouldStartWithPatchover = shouldShowPatchover(initialPage);
+          if (shouldStartWithPatchover) {
+            loadStartPageWithoutRemember(getPatchoverPageForInitialPage(initialPage));
+          } else {
+            loadStartPage(initialPage);
+          }
+        })().catch((error) => {
+          console.warn("Unable to choose the initial shell page:", error);
+          setShellTitle(verificationTitle);
+          setShellFavicon(verificationFaviconHref);
+          loadStartPageWithoutRemember("verif/index.html");
+        });
+
+        window.isContainerFullscreen = isContainerFullscreen;
+        window.setContainerFullscreen = setContainerFullscreen;
+        window.toggleContainerFullscreen = toggleContainerFullscreen;
+      })();
+    </script>
+  </body>
+</html>

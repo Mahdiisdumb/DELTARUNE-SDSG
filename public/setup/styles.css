@@ -1,0 +1,251 @@
+:root {
+  --bg: #000;
+  --ui-zoom: 1.35;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Eight Bit Operator", "Courier New", monospace;
+  -webkit-tap-highlight-color: transparent;
+  background: var(--bg);
+  overflow: hidden;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+#stage-shell {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  width: min(100vw, calc(100vh * 4 / 3));
+  height: min(100vh, calc(100vw * 3 / 4));
+  transform: translate(-50%, -50%);
+  background: #000;
+  outline: none;
+  overflow: hidden;
+}
+
+#stage-content {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--ui-zoom));
+  transform-origin: center center;
+}
+
+#stage-shell:focus,
+#stage-shell:focus-visible {
+  outline: none;
+}
+
+#survey-screen,
+#choice-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#survey-screen {
+  image-rendering: pixelated;
+  cursor: default;
+  display: block;
+}
+
+#choice-overlay {
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.choice-option {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: "Eight Bit Operator Choice", "Courier New", monospace;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: 0.06em;
+  white-space: pre;
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  text-shadow: none;
+  transform-origin: top left;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  pointer-events: auto;
+  touch-action: none;
+  user-select: none;
+  cursor: pointer;
+}
+
+.choice-prompt,
+.ending-line {
+  position: absolute;
+  left: 0;
+  top: 0;
+  font-family: "Eight Bit Operator Choice", "Courier New", monospace;
+  font-weight: 400;
+  font-style: normal;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: pre;
+  text-rendering: optimizeSpeed;
+  -webkit-font-smoothing: none;
+  font-smooth: never;
+  text-shadow: none;
+  transform-origin: top left;
+  color: #ffffff;
+  -webkit-text-fill-color: #ffffff;
+  pointer-events: none;
+}
+
+.ending-line {
+  letter-spacing: 0.06em;
+}
+
+.choice-option.is-selected {
+  color: #ffff00;
+  -webkit-text-fill-color: #ffff00;
+}
+
+#save-code-modal[hidden] {
+  display: none;
+}
+
+#save-code-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.88);
+  z-index: 10;
+}
+
+#save-code-dialog {
+  width: min(90vw, 640px);
+  border: 2px solid #ffffff;
+  background: #000000;
+  color: #ffffff;
+  padding: 22px 24px 20px;
+  font-family: "Eight Bit Operator Choice", "Courier New", monospace;
+}
+
+#save-code-copy,
+#save-code-status {
+  margin: 0;
+  font-weight: 400;
+  white-space: pre-wrap;
+}
+
+#save-code-copy {
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+#save-code-copy a {
+  color: #ffff7a;
+  text-decoration: none;
+  text-shadow:
+    0 0 6px rgba(255, 236, 104, 0.45),
+    0 0 12px rgba(255, 220, 54, 0.18);
+  transition:
+    color 120ms linear,
+    text-decoration-color 120ms linear,
+    text-shadow 120ms linear;
+}
+
+#save-code-copy a:hover,
+#save-code-copy a:focus-visible {
+  color: #ffff00;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  outline: none;
+  text-shadow:
+    0 0 8px rgba(255, 238, 112, 0.75),
+    0 0 16px rgba(255, 220, 54, 0.38);
+}
+
+#save-code-input {
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px 16px 12px;
+  border: 2px solid #ffffff;
+  background: #000000;
+  color: #ffffff;
+  font: 400 22px/1 "Eight Bit Operator Choice", "Courier New", monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  outline: none;
+}
+
+#save-code-input::placeholder {
+  color: rgba(255, 255, 255, 0.34);
+}
+
+#save-code-input:focus {
+  border-color: #ffff00;
+}
+
+#save-code-status {
+  margin-top: 14px;
+  font-size: 18px;
+  line-height: 1.15;
+  color: #ff6c6c;
+}
+
+#save-code-status[data-state="ok"] {
+  color: #ffffff;
+}
+
+#save-code-actions {
+  display: flex;
+  gap: 14px;
+  margin-top: 10px;
+}
+
+#save-code-actions button {
+  min-width: 128px;
+  padding: 10px 16px 8px;
+  border: 2px solid #ffffff;
+  background: #000000;
+  color: #ffffff;
+  font: 400 20px/1 "Eight Bit Operator Choice", "Courier New", monospace;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+}
+
+#save-code-actions button:hover,
+#save-code-actions button:focus,
+#save-code-actions button:focus-visible {
+  border-color: #ffff00;
+  color: #ffff00;
+  outline: none;
+}
+
+
+#stage-shell,
+#stage-content,
+#survey-screen,
+#choice-overlay,
+.choice-option {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: none;
+}

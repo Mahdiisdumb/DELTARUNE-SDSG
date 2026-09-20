@@ -1,0 +1,24 @@
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.site-shell,
+.site-frame {
+  width: 100%;
+  height: 100%;
+}
+
+.site-frame {
+  display: block;
+  border: 0;
+  background: #000;
+}

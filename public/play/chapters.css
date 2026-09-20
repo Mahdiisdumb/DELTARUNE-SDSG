@@ -1,0 +1,838 @@
+@font-face {
+    font-family: "Eight Bit Operator";
+    src: url("../shared/8bitoperator.otf") format("opentype");
+    font-display: swap;
+}
+
+@-webkit-keyframes rotation {
+    from {
+        -webkit-transform: rotate(0deg);
+    }
+
+    to {
+        -webkit-transform: rotate(360deg);
+    }
+}
+
+@-moz-keyframes rotation {
+    from {
+        -moz-transform: rotate(0deg);
+    }
+
+    to {
+        -moz-transform: rotate(360deg);
+    }
+}
+
+@-o-keyframes rotation {
+    from {
+        -o-transform: rotate(0deg);
+    }
+
+    to {
+        -o-transform: rotate(360deg);
+    }
+}
+
+@keyframes rotation {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: black;
+    font-family: "Lucida Console", Monaco, monospace;
+
+    color: white;
+
+}
+
+#game-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#game-border-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: none;
+    pointer-events: none;
+    z-index: 0;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 100% 100%;
+}
+
+#game-container.has-game-border #game-border-stage {
+    display: block;
+}
+
+.nsmessage {
+    padding-right: 0;
+    display: inline-block;
+    vertical-align: top;
+    font-weight: bold;
+    color: white;
+}
+
+div.nsmessage {
+    text-align: center;
+}
+
+canvas.emscripten {
+    display: block;
+    background-color: black;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    filter: blur(0) grayscale(0);
+    image-rendering: optimizeSpeed;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: -o-crisp-edges;
+    image-rendering: pixelated;
+    -ms-interpolation-mode: nearest-neighbor;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    margin: auto;
+    z-index: 1;
+}
+
+#game-container.has-game-border canvas.emscripten {
+    margin: 0;
+    transform: none;
+    max-width: none;
+    max-height: none;
+    object-fit: fill;
+}
+
+canvas.active {
+    opacity: 1;
+}
+
+/* 2. Remove the blue/orange outline when the canvas is clicked */
+#canvas:focus {
+    outline: none;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+
+    100% {
+        opacity: 1;
+    }
+}
+
+@keyframes blur {
+    0% {
+        filter: blur(0) grayscale(0);
+    }
+
+    100% {
+        filter: blur(2px) grayscale(1);
+    }
+}
+
+@keyframes vineTitleSheen {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    100% {
+        background-position: 100% 50%;
+    }
+}
+
+.spinner {
+    height: 30px;
+    width: 30px;
+    -webkit-animation: rotation 0.8s linear infinite;
+    -moz-animation: rotation 0.8s linear infinite;
+    -o-animation: rotation 0.8s linear infinite;
+    animation: rotation 0.8s linear infinite;
+    border: 5px solid #bdff00;
+    border-top: 5px solid #719900;
+    border-radius: 100%;
+}
+
+#status {
+    display: inline-block;
+    vertical-align: top;
+    font-weight: bold;
+    color: white;
+}
+
+#progress {
+    width: 250px;
+    height: 10px;
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 5px;
+}
+
+progress[value]::-webkit-progress-bar {
+    background-color: #8492a6;
+    height: 10px;
+    border-radius: 15px;
+}
+
+progress[value]::-webkit-progress-value {
+    background-image: -webkit-linear-gradient(left, #719900, #bdff00);
+    height: 10px;
+    border-radius: 15px;
+}
+
+.output-container {
+    position: fixed;
+    inset: 0;
+    z-index: 999;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
+    padding: 20px;
+    background: transparent;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+}
+
+.output-container.visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.output-button {
+    margin: 5px;
+    padding: 8px 15px;
+    width: auto;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: black;
+    color: white;
+    outline-color: #20c20e;
+    outline-style: dashed;
+    font-family: "Lucida Console", Monaco, monospace;
+}
+
+.vine-menu-panel {
+    position: relative;
+    width: min(78vw, 410px);
+    max-height: min(76vh, 520px);
+    overflow: auto;
+    isolation: isolate;
+    padding: 18px 22px 22px 52px;
+    border: 4px solid #fff;
+    background: #000;
+    box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.65);
+    font-family: "Eight Bit Operator", "Courier New", monospace;
+}
+
+.vine-menu-panel:focus,
+.vine-menu-panel:focus-visible,
+.vine-menu-panel .output-button:focus,
+.vine-menu-panel .output-button:focus-visible,
+#closeUIButton:focus,
+#closeUIButton:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.vine-menu-title {
+    position: relative;
+    z-index: 1;
+    margin: 0;
+    font-size: clamp(22px, 3vw, 28px);
+    letter-spacing: 1px;
+    text-transform: none;
+    font-weight: normal;
+    opacity: 1;
+    color: #86acf1;
+    background-image: linear-gradient(90deg, #4e6eb8 0%, #5a7bc3 18%, #6990d2 34%, #79a1e2 46%, #86acf1 50%, #79a1e2 54%, #6990d2 66%, #5a7bc3 82%, #4e6eb8 100%);
+    background-size: 240% 100%;
+    background-repeat: no-repeat;
+    background-position: 0% 50%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: vineTitleSheen 4.4s ease-in-out infinite alternate;
+    text-shadow: none;
+    filter: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+.vine-menu-list {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.vine-menu-group {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.vine-menu-soul {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 18px;
+    height: 18px;
+    overflow: visible;
+    image-rendering: pixelated;
+    pointer-events: none;
+    z-index: 20;
+    transform: translateZ(0);
+}
+
+.vine-menu-soul::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: url("./spr/spr_heartsmall.png");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    image-rendering: pixelated;
+    z-index: 1;
+    filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 2px #000) drop-shadow(0 0 3px #000);
+}
+
+.vine-menu-panel .output-button {
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    align-self: flex-start;
+    width: fit-content;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    outline: none;
+    background: transparent;
+    color: #fff;
+    font-size: clamp(18px, 3vw, 24px);
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    font-family: "Eight Bit Operator", "Courier New", monospace;
+}
+
+.vine-menu-panel[data-input-mode="mouse"] .output-button:hover,
+.vine-menu-panel[data-input-mode="mouse"] #closeUIButton:hover,
+.vine-menu-panel[data-input-mode="keyboard"] .output-button:focus-visible,
+.vine-menu-panel[data-input-mode="gamepad"] .output-button:focus-visible,
+.vine-menu-panel .output-button.is-selected,
+.vine-menu-panel[data-input-mode="keyboard"] #closeUIButton:focus-visible,
+.vine-menu-panel[data-input-mode="gamepad"] #closeUIButton:focus-visible,
+#closeUIButton.is-selected {
+    color: #ffff86;
+    text-shadow: 0 0 8px rgba(255, 255, 134, 0.35);
+}
+
+#output {
+    display: none;
+    min-height: 180px;
+    max-height: 220px;
+    background-color: black;
+    color: white;
+    font-family: "Eight Bit Operator", "Courier New", monospace;
+    outline: none;
+    border: 2px solid #fff;
+    padding: 10px 12px;
+    width: 100%;
+    box-sizing: border-box;
+    resize: vertical;
+    margin-top: 18px;
+}
+
+#message-container {
+    display: none;
+    min-height: 50px;
+    background-color: rgba(20, 20, 20, 0.5);
+    outline: none;
+    border: none;
+    padding: 0;
+    width: 100%;
+    position: absolute;
+    top: 0;
+}
+
+#messages {
+    margin-left: 50px;
+    color: white;
+    font-family: "Lucida Console", Monaco, monospace;
+    outline: none;
+    border: none;
+    padding: 0;
+}
+
+#closeUIButton {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 38px;
+    height: 38px;
+    background-color: transparent;
+    color: white;
+    border: none;
+    cursor: pointer;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    line-height: 1;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    font-family: "Eight Bit Operator", "Courier New", monospace;
+    touch-action: manipulation;
+}
+
+.hidden-ui {
+    display: none !important;
+}
+
+.save-manager-modal {
+    display: none;
+
+    position: fixed;
+
+    z-index: 1001;
+
+    left: 0;
+    top: 0;
+    width: 100%;
+
+    height: 100%;
+
+    overflow: auto;
+
+    background-color: rgba(0, 0, 0, 0.8);
+
+    justify-content: center;
+    align-items: center;
+}
+
+.save-manager-content {
+    background-color: #1a1a1a;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 90%;
+
+    max-width: 800px;
+
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.close-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: white;
+    text-decoration: none;
+}
+
+.minimize-button {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    position: absolute;
+    top: 11px;
+    right: 46px;
+    cursor: pointer;
+}
+
+.minimize-button:hover,
+.minimize-button:focus {
+    color: white;
+    text-decoration: none;
+}
+
+.save-file-list {
+    max-height: 400px;
+
+    overflow-y: auto;
+    border: 1px solid #333;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #0d0d0d;
+}
+
+.save-file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    border-bottom: 1px solid #222;
+}
+
+.save-file-item:last-child {
+    border-bottom: none;
+}
+
+.save-file-info {
+    flex-grow: 1;
+}
+
+.save-file-info span {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.save-file-actions button {
+    margin-left: 10px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #20c20e;
+    color: black;
+    font-weight: bold;
+}
+
+.save-file-actions button.delete-btn {
+    background-color: #FA1E4E;
+}
+
+.file-upload-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-top: 15px;
+    border-top: 1px solid #333;
+}
+
+.file-upload-section input[type="file"] {
+    background-color: #0d0d0d;
+    border: 1px solid #333;
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+}
+
+.file-upload-section input[type="text"] {
+    background-color: #0d0d0d;
+    border: 1px solid #333;
+    padding: 8px;
+    border-radius: 5px;
+    color: white;
+}
+
+.file-upload-section button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    font-weight: bold;
+}
+
+.custom-message-box {
+    display: none;
+
+    position: fixed;
+
+    z-index: 1002;
+
+    left: 0;
+    top: 0;
+    width: 100%;
+
+    height: 100%;
+
+    overflow: auto;
+
+    background-color: rgba(0, 0, 0, 0.6);
+
+    justify-content: center;
+    align-items: center;
+}
+
+.custom-message-box-content {
+    background-color: #1a1a1a;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+
+    max-width: 400px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.custom-message-box-content button {
+    background-color: #20c20e;
+    color: black;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+#mobile-controls {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    pointer-events: none;
+    z-index: 10003;
+    isolation: isolate;
+}
+
+#joystick-zone {
+    position: absolute;
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+
+#button-zone {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    align-items: center;
+
+    gap: 20px;
+
+    pointer-events: auto;
+    z-index: 1;
+}
+
+#mobile-buttons {
+    display: none;
+}
+
+#mobile-buttons.vine-menu-group {
+    display: none;
+}
+
+.action-button {
+    position: relative;
+    z-index: 2;
+    width: clamp(45px, 12vw, 80px);
+    height: clamp(45px, 12vw, 80px);
+    user-select: none;
+    -webkit-user-select: none;
+    pointer-events: auto;
+
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 0.1s ease, transform 0.1s ease;
+    opacity: 0.7;
+
+}
+
+.action-button.pressed {
+    opacity: 1.0;
+
+    transform: scale(0.95);
+
+}
+
+.nipple {
+    opacity: 0.7;
+}
+
+.nipple.front {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.nipple.back {
+    background-color: rgba(128, 128, 128, 0.5) !important;
+}
+
+
+/* Vinetrap SAVE Manager refresh */
+.save-manager-modal {
+    background: radial-gradient(circle at top, rgba(42, 32, 76, 0.35), rgba(0, 0, 0, 0.92) 58%), rgba(0,0,0,.9);
+    backdrop-filter: blur(3px);
+}
+.save-manager-content {
+    width: min(92vw, 880px);
+    max-height: 88vh;
+    overflow: auto;
+    background: linear-gradient(180deg, #101018 0%, #07070d 100%);
+    border: 2px solid #fff;
+    border-radius: 0;
+    box-shadow: 0 0 0 4px #000, 0 0 28px rgba(255,255,255,.18), 0 0 44px rgba(124,83,255,.16);
+    color: #fff;
+    font-family: "Eight Bit Operator", "Determination Mono", "Courier New", monospace;
+}
+.save-manager-content h2,
+.save-manager-content h3 {
+    margin: 6px 0 10px;
+    color: #ffff66;
+    text-align: center;
+    letter-spacing: .03em;
+    text-shadow: 2px 2px 0 #000;
+}
+.save-manager-content h2::before { content: "Project Vinetrap "; color: #fff; }
+.close-button,
+.minimize-button {
+    color: #fff;
+    background: #000;
+    border: 2px solid #fff;
+    width: 34px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+    z-index: 4;
+}
+.minimize-button { right: 62px; }
+.close-button:hover,
+.close-button:focus,
+.minimize-button:hover,
+.minimize-button:focus {
+    color: #ffff66;
+    outline: 2px solid #ffff66;
+}
+.save-file-list {
+    max-height: 34vh;
+    border: 2px solid #fff;
+    border-radius: 0;
+    background: #020207;
+    box-shadow: inset 0 0 20px rgba(255,255,255,.06);
+}
+.save-file-item {
+    align-items: stretch;
+    gap: 12px;
+    border-bottom: 1px solid rgba(255,255,255,.25);
+    background: rgba(255,255,255,.025);
+}
+.save-file-info span { color: #ddd; }
+.save-file-info strong { color: #ffff66; }
+.file-upload-section,
+.save-code-section {
+    border: 2px solid rgba(255,255,255,.75);
+    background: rgba(0,0,0,.55);
+    padding: 12px;
+    margin-top: 12px;
+    display: grid;
+    gap: 9px;
+}
+.save-code-section textarea,
+.file-upload-section input[type="text"],
+.file-upload-section input[type="file"] {
+    width: 100%;
+    box-sizing: border-box;
+    color: #fff;
+    background: #05050a;
+    border: 2px solid #777;
+    border-radius: 0;
+    padding: 9px;
+    font-family: "Eight Bit Operator", "Courier New", monospace;
+}
+.save-code-section textarea {
+    min-height: 82px;
+    resize: vertical;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.save-code-actions,
+.save-file-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+.save-manager-content button,
+.file-upload-section button,
+.save-file-actions button,
+.custom-message-box-content button {
+    background: #000;
+    color: #fff;
+    border: 2px solid #fff;
+    border-radius: 0;
+    padding: 8px 12px;
+    font-family: "Eight Bit Operator", "Courier New", monospace;
+    font-weight: normal;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+.save-manager-content button:hover,
+.save-manager-content button:focus,
+.file-upload-section input:focus,
+.save-code-section textarea:focus {
+    outline: 2px solid #ffff66;
+    color: #ffff66;
+    box-shadow: 0 0 0 3px #000, 0 0 14px rgba(255,255,102,.35);
+}
+.save-file-actions button.delete-btn { background: #180009; color: #ff7c9a; border-color: #ff7c9a; }
+.save-code-status {
+    min-height: 1.4em;
+    color: #ccc;
+    text-align: center;
+}
+.save-code-status.ok { color: #7dff7a; }
+.save-code-status.error { color: #ff7c9a; }
+.custom-message-box-content {
+    background: #05050a;
+    border: 2px solid #fff;
+    border-radius: 0;
+    box-shadow: 0 0 0 4px #000, 0 0 24px rgba(255,255,255,.18);
+    font-family: "Eight Bit Operator", "Courier New", monospace;
+}
+
+
+/* Keep SAVE code input text uppercase, but do not force the instructional placeholder uppercase. */
+#saveCodeInput::placeholder {
+    text-transform: none !important;
+}

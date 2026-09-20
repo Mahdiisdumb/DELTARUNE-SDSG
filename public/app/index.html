@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Vinetrap</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #000;
+        color-scheme: dark;
+      }
+    </style>
+    <link rel="preload" as="image" href="./assets/mark.png">
+    <link rel="preload" as="image" href="./assets/cross.png">
+    <link rel="preload" as="image" href="./assets/help.png">
+    <link rel="stylesheet" href="../shared/fonts.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div id="stage-shell" tabindex="0" data-autofocus-root>
+      <div id="stage-content">
+        <img id="menu-logo" src="./logo.png" alt="Project Vinetrap logo">
+        <div id="menu-marquee" aria-hidden="true">
+          <div id="menu-marquee-track"></div>
+        </div>
+        <section id="app-panel-overlay" hidden aria-hidden="true">
+          <h2 id="app-panel-title"></h2>
+        </section>
+        <div id="choice-overlay" aria-hidden="true"></div>
+        <img id="menu-soul" src="./assets/menu_soul.png" alt="" aria-hidden="true">
+        <div id="menu-fade" aria-hidden="true"></div>
+      </div>
+      <div id="runtime-footer" aria-hidden="true">
+        <p id="runtime-footer-version">v7.03 • <span id="runtime-status-group"><img id="runtime-offline-mode-icon" src="./assets/mark.png" alt="" aria-hidden="true" hidden><span id="runtime-status-label" class="runtime-footer-status-online">Online</span></span></p>
+        <p id="runtime-footer-device">
+          runnin' on <span id="runtime-device-label" class="runtime-footer-accent">Other</span>!
+        </p>
+      </div>
+      <input id="mod-patch-file" type="file" accept=".xdelta" hidden>
+    </div>
+
+    <script>
+      (function focusAppStage() {
+        function focusStage() {
+          const stage = document.getElementById("stage-shell");
+
+          if (!stage) {
+            return;
+          }
+
+          try {
+            window.focus();
+            stage.focus({ preventScroll: true });
+          } catch (error) {
+            try {
+              stage.focus();
+            } catch (nestedError) {
+              console.warn("Unable to focus the app stage:", nestedError);
+            }
+          }
+        }
+
+        window.addEventListener("load", () => {
+          requestAnimationFrame(() => {
+            focusStage();
+          });
+        });
+      })();
+    </script>
+
+    <script src="../shared/gate.js"></script>
+    <script src="/shared/local-gate.js"></script>
+    <script src="../shared/stats-config.js"></script>
+    <script src="../shared/stats.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>

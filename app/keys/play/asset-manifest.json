@@ -1,0 +1,512 @@
+{
+  "chapter1::game.unx": {
+    "bytes": 14822652,
+    "contentType": "application/octet-stream",
+    "localPath": "chapter1/game.unx"
+  },
+  "chapter1::runner.data": {
+    "bytes": 11064964,
+    "contentType": "application/octet-stream",
+    "localPath": "chapter1/runner.data"
+  },
+  "chapter1::runner.js": {
+    "bytes": 152242,
+    "contentType": "text/javascript; charset=utf-8",
+    "localPath": "chapter1/runner.js"
+  },
+  "chapter2::game.unx": {
+    "bytes": 69325334,
+    "contentType": "application/octet-stream",
+    "localPath": "chapter2/game.unx"
+  },
+  "chapter2::runner.data": {
+    "bytes": 11937461,
+    "contentType": "application/octet-stream",
+    "localPath": "chapter2/runner.data"
+  },
+  "chapter2::runner.js": {
+    "bytes": 152242,
+    "contentType": "text/javascript; charset=utf-8",
+    "localPath": "chapter2/runner.js"
+  },
+  "chapter3::game.unx": {
+    "bytes": 137247234,
+    "contentType": "application/octet-stream",
+    "localPath": "chapter3/game.unx"
+  },
+  "chapter3::runner.data": {
+    "bytes": 12383432,
+    "contentType": "application/octet-stream",
+    "localPath": "chapter3/runner.data"
+  },
+  "chapter3::runner.js": {
+    "bytes": 151918,
+    "contentType": "text/javascript; charset=utf-8",
+    "localPath": "chapter3/runner.js"
+  },
+  "chapter3::vid/tennaintrof1_compressed_28.mp4": {
+    "bytes": 7792354,
+    "contentType": "video/mp4",
+    "localPath": "chapter3/vid/tennaintrof1_compressed_28.mp4"
+  },
+  "chapter3::vid/tennaintrojpf1_compressed_28.mp4": {
+    "bytes": 7713827,
+    "contentType": "video/mp4",
+    "localPath": "chapter3/vid/tennaintrojpf1_compressed_28.mp4"
+  },
+  "chapter4::game.unx": {
+    "bytes": 134721342,
+    "contentType": "application/octet-stream",
+    "localPath": "chapter4/game.unx"
+  },
+  "chapter4::runner.data": {
+    "bytes": 12791261,
+    "contentType": "application/octet-stream",
+    "localPath": "chapter4/runner.data"
+  },
+  "chapter4::runner.js": {
+    "bytes": 151879,
+    "contentType": "text/javascript; charset=utf-8",
+    "localPath": "chapter4/runner.js"
+  },
+  "chapter5::game.unx": {
+    "bytes": 168717228,
+    "contentType": "application/octet-stream",
+    "localPath": "chapter5/game.unx"
+  },
+  "chapter5::runner.data": {
+    "bytes": 13435034,
+    "contentType": "application/octet-stream",
+    "localPath": "chapter5/runner.data"
+  },
+  "chapter5::runner.js": {
+    "bytes": 152283,
+    "contentType": "text/javascript; charset=utf-8",
+    "localPath": "chapter5/runner.js"
+  },
+  "chapter5::vid/ch5_intro_en.mp4": {
+    "bytes": 6573228,
+    "contentType": "video/mp4",
+    "localPath": "chapter5/vid/ch5_intro_en.mp4"
+  },
+  "chapter5::vid/ch5_intro_jp.mp4": {
+    "bytes": 4482399,
+    "contentType": "video/mp4",
+    "localPath": "chapter5/vid/ch5_intro_jp.mp4"
+  },
+  "play::game.unx": {
+    "bytes": 3113602,
+    "contentType": "application/octet-stream",
+    "localPath": "play/game.unx"
+  },
+  "play::runner.data": {
+    "bytes": 13632419,
+    "contentType": "application/octet-stream",
+    "localPath": "play/runner.data"
+  },
+  "play::runner.js": {
+    "bytes": 268442,
+    "contentType": "application/javascript",
+    "localPath": "play/runner.js"
+  },
+  "rush::audio-worklet.js": {
+    "bytes": 502,
+    "contentType": "application/javascript",
+    "localPath": "rush/audio-worklet.js"
+  },
+  "rush::audiogroup1.dat": {
+    "bytes": 709152,
+    "contentType": "application/octet-stream",
+    "localPath": "rush/audiogroup1.dat"
+  },
+  "rush::game.unx": {
+    "bytes": 146437349,
+    "contentType": "application/octet-stream",
+    "localPath": "rush/game.unx"
+  },
+  "rush::runner.data": {
+    "bytes": 18797738,
+    "contentType": "application/octet-stream",
+    "localPath": "rush/runner.data"
+  },
+  "rush::runner.js": {
+    "bytes": 146180,
+    "contentType": "application/javascript",
+    "localPath": "rush/runner.js"
+  },
+  "rush::runner.wasm": {
+    "bytes": 5284387,
+    "contentType": "application/wasm",
+    "localPath": "rush/runner.wasm"
+  },
+  "shared::common/borders/border_dw_blue.png": {
+    "bytes": 161698,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_blue.png"
+  },
+  "shared::common/borders/border_dw_blue_light.png": {
+    "bytes": 164537,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_blue_light.png"
+  },
+  "shared::common/borders/border_dw_blue_stars.png": {
+    "bytes": 179612,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_blue_stars.png"
+  },
+  "shared::common/borders/border_dw_castletown.png": {
+    "bytes": 551282,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_castletown.png"
+  },
+  "shared::common/borders/border_dw_castle_cafe.png": {
+    "bytes": 592625,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_castle_cafe.png"
+  },
+  "shared::common/borders/border_dw_castle_left.png": {
+    "bytes": 454575,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_castle_left.png"
+  },
+  "shared::common/borders/border_dw_castle_right.png": {
+    "bytes": 577655,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_castle_right.png"
+  },
+  "shared::common/borders/border_dw_castle_right_gold.png": {
+    "bytes": 595470,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_castle_right_gold.png"
+  },
+  "shared::common/borders/border_dw_castle_top.png": {
+    "bytes": 454422,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_castle_top.png"
+  },
+  "shared::common/borders/border_dw_church_a.png": {
+    "bytes": 482867,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_church_a.png"
+  },
+  "shared::common/borders/border_dw_church_b.png": {
+    "bytes": 723396,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_church_b.png"
+  },
+  "shared::common/borders/border_dw_church_c.png": {
+    "bytes": 644525,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_church_c.png"
+  },
+  "shared::common/borders/border_dw_city.png": {
+    "bytes": 259320,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_city.png"
+  },
+  "shared::common/borders/border_dw_cyber.png": {
+    "bytes": 347715,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_cyber.png"
+  },
+  "shared::common/borders/border_dw_garden.png": {
+    "bytes": 300165,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_garden.png"
+  },
+  "shared::common/borders/border_dw_garden_cliff.png": {
+    "bytes": 1240356,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_garden_cliff.png"
+  },
+  "shared::common/borders/border_dw_garden_cliff_bottom.png": {
+    "bytes": 582084,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_garden_cliff_bottom.png"
+  },
+  "shared::common/borders/border_dw_garden_cliff_bottom_frame.png": {
+    "bytes": 86984,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_garden_cliff_bottom_frame.png"
+  },
+  "shared::common/borders/border_dw_garden_cliff_frame.png": {
+    "bytes": 166032,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_garden_cliff_frame.png"
+  },
+  "shared::common/borders/border_dw_garden_cliff_lattice.png": {
+    "bytes": 327598,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_garden_cliff_lattice.png"
+  },
+  "shared::common/borders/border_dw_garden_cliff_lattice_bottom.png": {
+    "bytes": 68,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_garden_cliff_lattice_bottom.png"
+  },
+  "shared::common/borders/border_dw_green_room.png": {
+    "bytes": 174433,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_green_room.png"
+  },
+  "shared::common/borders/border_dw_green_sloppy.png": {
+    "bytes": 173062,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_green_sloppy.png"
+  },
+  "shared::common/borders/border_dw_green_sloppy_z.png": {
+    "bytes": 158714,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_green_sloppy_z.png"
+  },
+  "shared::common/borders/border_dw_mansion.png": {
+    "bytes": 412896,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_mansion.png"
+  },
+  "shared::common/borders/border_dw_pink.png": {
+    "bytes": 580355,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_pink.png"
+  },
+  "shared::common/borders/border_dw_pink_alt.png": {
+    "bytes": 591867,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_pink_alt.png"
+  },
+  "shared::common/borders/border_dw_red_smiles.png": {
+    "bytes": 205586,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_red_smiles.png"
+  },
+  "shared::common/borders/border_dw_teevie.png": {
+    "bytes": 519546,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_teevie.png"
+  },
+  "shared::common/borders/border_dw_titan_base.png": {
+    "bytes": 135286,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_titan_base.png"
+  },
+  "shared::common/borders/border_dw_titan_eyes.png": {
+    "bytes": 32670,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_titan_eyes.png"
+  },
+  "shared::common/borders/border_dw_titan_eyes_red.png": {
+    "bytes": 70842,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_titan_eyes_red.png"
+  },
+  "shared::common/borders/border_dw_tv_black.png": {
+    "bytes": 102181,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_tv_black.png"
+  },
+  "shared::common/borders/border_dw_tv_blue.png": {
+    "bytes": 96085,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_tv_blue.png"
+  },
+  "shared::common/borders/border_dw_tv_meta.png": {
+    "bytes": 224570,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_tv_meta.png"
+  },
+  "shared::common/borders/border_dw_word.png": {
+    "bytes": 1809365,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_dw_word.png"
+  },
+  "shared::common/borders/border_line_1080.png": {
+    "bytes": 10883,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_line_1080.png"
+  },
+  "shared::common/borders/border_lw_town.png": {
+    "bytes": 570683,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_lw_town.png"
+  },
+  "shared::common/borders/border_lw_town_morning.png": {
+    "bytes": 567633,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_lw_town_morning.png"
+  },
+  "shared::common/borders/border_lw_town_night.png": {
+    "bytes": 382266,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_lw_town_night.png"
+  },
+  "shared::common/borders/border_lw_town_sunset.png": {
+    "bytes": 619234,
+    "contentType": "image/png",
+    "localPath": "shared/common/borders/border_lw_town_sunset.png"
+  },
+  "shared::common/chapters/audio-worklet.js": {
+    "bytes": 491,
+    "contentType": "application/javascript",
+    "localPath": "shared/common/chapters/audio-worklet.js"
+  },
+  "shared::common/chapters/AUDIO_INTRONOISE.ogg": {
+    "bytes": 259154,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/AUDIO_INTRONOISE.ogg"
+  },
+  "shared::common/chapters/mus_undynescary.ogg": {
+    "bytes": 337354,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/mus_undynescary.ogg"
+  },
+  "shared::common/chapters/runner.wasm": {
+    "bytes": 4634239,
+    "contentType": "application/wasm",
+    "localPath": "shared/common/chapters/runner.wasm"
+  },
+  "shared::common/chapters/snd_bigcar_yelp.ogg": {
+    "bytes": 7778,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_bigcar_yelp.ogg"
+  },
+  "shared::common/chapters/snd_churchbell.ogg": {
+    "bytes": 145287,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_churchbell.ogg"
+  },
+  "shared::common/chapters/snd_closet_fall.ogg": {
+    "bytes": 119120,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_closet_fall.ogg"
+  },
+  "shared::common/chapters/snd_closet_impact.ogg": {
+    "bytes": 80298,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_closet_impact.ogg"
+  },
+  "shared::common/chapters/snd_dtrans_drone.ogg": {
+    "bytes": 192776,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_dtrans_drone.ogg"
+  },
+  "shared::common/chapters/snd_dtrans_flip.ogg": {
+    "bytes": 38277,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_dtrans_flip.ogg"
+  },
+  "shared::common/chapters/snd_dtrans_heavypassing.ogg": {
+    "bytes": 27935,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_dtrans_heavypassing.ogg"
+  },
+  "shared::common/chapters/snd_dtrans_lw.ogg": {
+    "bytes": 82329,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_dtrans_lw.ogg"
+  },
+  "shared::common/chapters/snd_dtrans_square.ogg": {
+    "bytes": 27509,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_dtrans_square.ogg"
+  },
+  "shared::common/chapters/snd_dtrans_twinkle.ogg": {
+    "bytes": 53497,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_dtrans_twinkle.ogg"
+  },
+  "shared::common/chapters/snd_fountain_make.ogg": {
+    "bytes": 86934,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_fountain_make.ogg"
+  },
+  "shared::common/chapters/snd_fountain_target.ogg": {
+    "bytes": 4619,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_fountain_target.ogg"
+  },
+  "shared::common/chapters/snd_ghostappear.ogg": {
+    "bytes": 18349,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_ghostappear.ogg"
+  },
+  "shared::common/chapters/snd_great_shine.ogg": {
+    "bytes": 20854,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_great_shine.ogg"
+  },
+  "shared::common/chapters/snd_him_quick.ogg": {
+    "bytes": 35156,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_him_quick.ogg"
+  },
+  "shared::common/chapters/snd_hitcar.ogg": {
+    "bytes": 10331,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_hitcar.ogg"
+  },
+  "shared::common/chapters/snd_hitcar_little.ogg": {
+    "bytes": 8540,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_hitcar_little.ogg"
+  },
+  "shared::common/chapters/snd_icespell.ogg": {
+    "bytes": 35258,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_icespell.ogg"
+  },
+  "shared::common/chapters/snd_paper_rumble.ogg": {
+    "bytes": 31366,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_paper_rumble.ogg"
+  },
+  "shared::common/chapters/snd_paper_surf.ogg": {
+    "bytes": 31533,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_paper_surf.ogg"
+  },
+  "shared::common/chapters/snd_power.ogg": {
+    "bytes": 31486,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_power.ogg"
+  },
+  "shared::common/chapters/snd_revival.ogg": {
+    "bytes": 45846,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_revival.ogg"
+  },
+  "shared::common/chapters/snd_rurus_appear.ogg": {
+    "bytes": 61668,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_rurus_appear.ogg"
+  },
+  "shared::common/chapters/snd_smallcar_yelp.ogg": {
+    "bytes": 6008,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_smallcar_yelp.ogg"
+  },
+  "shared::common/chapters/snd_snowgrave.ogg": {
+    "bytes": 44747,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_snowgrave.ogg"
+  },
+  "shared::common/chapters/snd_spell_pacify.ogg": {
+    "bytes": 18420,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_spell_pacify.ogg"
+  },
+  "shared::common/chapters/snd_usefountain.ogg": {
+    "bytes": 112368,
+    "contentType": "audio/ogg",
+    "localPath": "shared/common/chapters/snd_usefountain.ogg"
+  },
+  "shared::mus/base_index_audio.pak": {
+    "bytes": 317070706,
+    "contentType": "application/octet-stream",
+    "localPath": "shared/mus/base_index_audio.pak"
+  },
+  "chapter3::vid/tennaintrof1_zhname_compressed_28.mp4": {
+    "bytes": 7787425,
+    "contentType": "video/mp4",
+    "localPath": "chapter3/vid/tennaintrof1_zhname_compressed_28.mp4"
+  }
+}

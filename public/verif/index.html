@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>please verify...!</title>
+    <link rel="icon" href="/verif/verif.ico?v=1">
+    <link rel="shortcut icon" href="/verif/verif.ico?v=1">
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #000;
+        color-scheme: dark;
+      }
+    </style>
+    <link rel="stylesheet" href="../shared/fonts.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="verify-shell" data-autofocus-root tabindex="-1">
+      <section class="verify-card" aria-labelledby="verify-title">
+        <h1 id="verify-title" class="verify-title">Please verify your ownership.</h1>
+        <div class="verify-actions" role="group" aria-label="Verification options">
+          <button id="steam-connect-button" class="verify-button" type="button">Connect with Steam!</button>
+          <button id="data-win-button" class="verify-button" type="button">Use a data.win file?</button>
+        </div>
+        <p id="verify-status" class="verify-status" aria-live="polite"></p>
+        <p id="verify-details" class="verify-details" aria-live="polite"></p>
+      </section>
+
+      <div id="data-code-dialog" class="verify-modal" hidden aria-hidden="true">
+        <section class="verify-modal-card" role="dialog" aria-modal="true" aria-labelledby="data-code-title">
+          <h2 id="data-code-title" class="verify-modal-title">Enter your DataPIN.</h2>
+          <p class="verify-modal-copy">Type in your 4-digit code from <a class="verify-link" href="https://data.vinetrap.net" target="_blank" rel="noopener noreferrer">data.vinetrap.net</a>!</p>
+          <input
+            id="data-code-input"
+            class="verify-code-input"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="4"
+            placeholder="1234"
+            aria-label="data.win code"
+          >
+          <p id="data-code-status" class="verify-modal-status" aria-live="polite" hidden></p>
+          <div class="verify-modal-actions">
+            <button id="data-code-submit" class="verify-button" type="button">Verify</button>
+            <button id="data-code-cancel" class="verify-button" type="button">Cancel</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      (function remember_verify_page() {
+        const verify_page_path = "verif/index.html";
+
+        try {
+          localStorage.setItem("startpage", verify_page_path);
+        } catch (error) {
+          console.warn("Unable to save the verification page:", error);
+        }
+
+        try {
+          if (window.parent && window.parent !== window && typeof window.parent["setContainerStartPage"] === "function") {
+            window.parent["setContainerStartPage"](verify_page_path);
+          }
+        } catch (error) {
+          console.warn("Unable to sync the verification page with the container:", error);
+        }
+      })();
+    </script>
+    <script src="../shared/gate.js"></script>
+    <script src="/shared/local-gate.js"></script>
+    <script src="./steamverif.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>

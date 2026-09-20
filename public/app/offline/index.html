@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Vinetrap</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #000;
+        color-scheme: dark;
+      }
+    </style>
+    <link rel="stylesheet" href="../../shared/fonts.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body class="offline-ui-pending">
+    <main id="offline-shell" hidden tabindex="-1">
+      <section id="offline-card" aria-live="polite">
+        <section id="offline-warning-screen" class="offline-screen">
+          <p id="offline-warning-copy">Offline Mode downloads all game assets in order to let you play offline or to give you a more seamless experience when playing by having the assets already downloaded to your device to drastically speed up loading times!
+
+DELTARUNE (not including the Mod Loader) is ~862MB. By enabling Offline Mode, you will not be able to receive any more patches or updates until you disable Offline Mode, however you can always re-enable it to play the updated version offline!</p>
+          <div id="offline-choice-row">
+            <button id="offline-choice-yes" class="offline-choice" type="button">Turn it on!</button>
+            <button id="offline-choice-no" class="offline-choice is-selected" type="button">Nah, take me back</button>
+            <button id="offline-choice-third" class="offline-choice" type="button" hidden>Disable...</button>
+          </div>
+        </section>
+
+        <section id="offline-result-screen" class="offline-screen" hidden>
+          <h2 id="offline-result-title"></h2>
+          <p id="offline-result-copy"></p>
+          <div id="offline-result-actions">
+            <button id="offline-result-primary" class="offline-result-button is-selected" type="button">Return to /app</button>
+            <button id="offline-result-secondary" class="offline-result-button" type="button" hidden>Back</button>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <section id="offline-download-screen" class="offline-screen" hidden aria-live="polite">
+      <iframe
+        id="offline-loader-frame"
+        src="./loader-frame.html"
+        title="Offline Mode Loader"
+        tabindex="-1"
+        loading="eager"
+      ></iframe>
+    </section>
+
+    <script src="../../shared/gate.js"></script>
+    <script src="/shared/local-gate.js"></script>
+    <script src="../../play/play/loader.js"></script>
+    <script src="./script.js"></script>
+  </body>
+</html>

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Vinetrap v7.03</title>
+    <meta name="theme-color" content="#000000">
+    <style>
+      @import url("./shared/fonts.css");
+
+      :root { color-scheme: dark; }
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #000;
+        color: #fff;
+      }
+      body {
+        font-family: "Eight Bit Operator", "Determination Mono", "Courier New", monospace;
+        -webkit-font-smoothing: none;
+        text-rendering: geometricPrecision;
+      }
+      #patchover-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px;
+        box-sizing: border-box;
+        background: #000;
+        color: #fff;
+        cursor: pointer;
+        user-select: none;
+      }
+      #patchover-card {
+        width: min(720px, calc(100vw - 24px), calc((100vh - 24px) * 4 / 3));
+        aspect-ratio: 4 / 3;
+        box-sizing: border-box;
+        border: 2px solid #fff;
+        background: #000;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: clamp(14px, 2.55vw, 26px) clamp(16px, 2.65vw, 28px);
+        overflow: hidden;
+      }
+      .patchover-header {
+        margin: 0;
+        color: #fff;
+        text-align: center;
+        text-shadow: 0.08em 0.08em 0 #000, 0.16em 0.16em 0 rgba(0,0,0,.42);
+      }
+      .patchover-kicker {
+        display: block;
+        margin-bottom: 1px;
+        color: #b3a3ab;
+        font-size: clamp(13px, min(1.75vw, 2.35vh), 20px);
+        line-height: 1;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .patchover-brand {
+        display: block;
+        font-family: "Eight Bit Operator Plus", "Eight Bit Operator", "Courier New", monospace;
+        font-size: clamp(38px, min(6.05vw, 8.05vh), 62px);
+        line-height: 0.85;
+        letter-spacing: 0.035em;
+      }
+      .patchover-updated {
+        display: block;
+        margin-top: 7px;
+        font-size: clamp(21px, min(3.35vw, 4.45vh), 34px);
+        line-height: 0.95;
+        letter-spacing: 0.03em;
+      }
+      .patchover-version {
+        display: block;
+        margin-top: 7px;
+        color: #b3a3ab;
+        font-size: clamp(15px, min(1.95vw, 2.6vh), 22px);
+        line-height: 1;
+        letter-spacing: 0.08em;
+      }
+      .patchover-list {
+        margin: clamp(13px, 2.05vh, 20px) auto 0;
+        padding: 0;
+        width: min(100%, 620px);
+        list-style: none;
+        font-size: clamp(15px, min(2.02vw, 2.68vh), 22px);
+        line-height: 1.08;
+        letter-spacing: 0.018em;
+        text-shadow: 0.08em 0.08em 0 #000, 0.16em 0.16em 0 rgba(0,0,0,.42);
+      }
+      .patchover-list li {
+        position: relative;
+        margin: 0 0 clamp(5px, .95vh, 8px);
+        padding-left: 1.05em;
+      }
+      .patchover-list li::before {
+        content: "•";
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
+      .patchover-thanks {
+        margin: clamp(10px, 1.6vh, 16px) auto 0;
+        width: min(100%, 630px);
+        font-size: clamp(16px, min(2.35vw, 3.12vh), 25px);
+        line-height: 1.05;
+        letter-spacing: 0.019em;
+        text-align: center;
+        text-shadow: 0.08em 0.08em 0 #000, 0.16em 0.16em 0 rgba(0,0,0,.42);
+      }
+      .patchover-dismiss {
+        margin: clamp(8px, 1.25vh, 13px) 0 0;
+        color: #b3a3ab;
+        font-size: clamp(10px, min(1.38vw, 1.84vh), 15px);
+        line-height: 1.06;
+        letter-spacing: 0.035em;
+        text-align: center;
+      }
+      @media (max-width: 520px), (max-height: 520px) {
+        #patchover-card { padding: 12px 11px; }
+        .patchover-brand { font-size: clamp(29px, min(7.6vw, 7vh), 43px); }
+        .patchover-updated { font-size: clamp(17px, min(4.4vw, 4vh), 24px); }
+        .patchover-version { margin-top: 4px; }
+        .patchover-list { margin-top: 8px; font-size: clamp(11px, min(2.95vw, 2.38vh), 15px); line-height: 1.04; }
+        .patchover-list li { margin-bottom: 4px; }
+        .patchover-thanks { margin-top: 6px; font-size: clamp(12px, min(3.25vw, 2.65vh), 17px); line-height: 1.03; }
+        .patchover-dismiss { margin-top: 6px; font-size: clamp(9px, min(2.45vw, 1.82vh), 12px); }
+      }
+    </style>
+  </head>
+  <body>
+    <main id="patchover-overlay" role="dialog" aria-modal="true" aria-labelledby="patchover-title" tabindex="0">
+      <section id="patchover-card">
+        <h1 id="patchover-title" class="patchover-header"><span class="patchover-kicker">Project</span><span class="patchover-brand">Vinetrap</span><span class="patchover-updated">has been updated!</span><span class="patchover-version">v7.03</span></h1>
+        <ul class="patchover-list" aria-label="Update notes">
+          <li>Fixed some people getting CDN 403 errors (Bunny security has been loosened!)</li>
+          <li>Updated the Mod Loader: you can now set mods as default when launching vanilla; there is now (unstable) Chapter Select support and all DR versions have been added!</li>
+          <li>Stabilized Dynamic border support (the images will now preload and borders won't erroneously disappear)</li>
+          <li>Fixed some incorrect UI text</li>
+          <li>Added a Chapter Select QoL mod to be used by default (credits to Determined Memories & JTUexe for the mod)</li>
+        </ul>
+        <p class="patchover-thanks">And that's all for now, folks! Thanks for using Project Vinetrap! This is a passion project, so please help support us and help spread the word as this is a pretty big new project &lt;3</p>
+        <p class="patchover-dismiss">(You can tap/click the screen or press any key to continue! Buh-bye!)</p>
+      </section>
+    </main>
+    <script>
+      (() => {
+        const overlay = document.getElementById("patchover-overlay");
+        let dismissed = false;
+
+        function migrateStorageKeys() {
+          try {
+            const oldAudioKey = "dr-play-audio-caching-mode-v1";
+            const newAudioKey = "cachingmode";
+            const oldAudioValue = localStorage.getItem(oldAudioKey);
+            if (oldAudioValue !== null && localStorage.getItem(newAudioKey) === null) {
+              localStorage.setItem(newAudioKey, oldAudioValue);
+            }
+            localStorage.removeItem(oldAudioKey);
+
+            const oldHistoryKey = "dr-play-loader-history-v1";
+            const newHistoryKey = "loaderhistory";
+            const oldHistoryValue = localStorage.getItem(oldHistoryKey);
+            if (oldHistoryValue !== null && localStorage.getItem(newHistoryKey) === null) {
+              localStorage.setItem(newHistoryKey, oldHistoryValue);
+            }
+            localStorage.removeItem(oldHistoryKey);
+
+            const oldFirstRunKey = "dr-play-chapter-select-intro-v1";
+            const newFirstRunKey = "firstrun";
+            const oldFirstRunValue = localStorage.getItem(oldFirstRunKey);
+            if (oldFirstRunValue !== null && localStorage.getItem(newFirstRunKey) === null) {
+              localStorage.setItem(newFirstRunKey, oldFirstRunValue);
+            }
+            localStorage.removeItem(oldFirstRunKey);
+          } catch (error) {
+            console.warn("Unable to migrate Vinetrap storage keys:", error);
+          }
+        }
+
+        async function clearSiteCachesExceptPersistentStorage() {
+          try {
+            if ("serviceWorker" in navigator) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              await Promise.allSettled(registrations.map((registration) => registration.unregister()));
+            }
+          } catch (error) {
+            console.warn("Unable to unregister service workers during patchover:", error);
+          }
+
+          try {
+            if (window.caches?.keys) {
+              const cacheNames = await window.caches.keys();
+              await Promise.allSettled(cacheNames.map((cacheName) => window.caches.delete(cacheName)));
+            }
+          } catch (error) {
+            console.warn("Unable to clear Cache Storage during patchover:", error);
+          }
+        }
+
+        function getReturnTarget() {
+          const params = new URLSearchParams(window.location.search);
+          return params.get("return") || params.get("redirect") || params.get("next") || "./app/";
+        }
+        function dismissPatchover() {
+          if (dismissed) return;
+          dismissed = true;
+          try {
+            localStorage.setItem("patchover_v7_03_seen", "1");
+          } catch (_storage_error) {
+          }
+          overlay.style.pointerEvents = "none";
+          overlay.style.opacity = "0";
+          overlay.style.transition = "opacity 140ms linear";
+          window.setTimeout(() => { window.location.href = getReturnTarget(); }, 145);
+        }
+        overlay.addEventListener("pointerdown", (event) => { event.preventDefault(); dismissPatchover(); });
+        document.addEventListener("keydown", (event) => { event.preventDefault(); dismissPatchover(); });
+        function pollGamepads() {
+          if (dismissed) return;
+          const gamepads = Array.from(navigator.getGamepads?.() || []).filter(Boolean);
+          if (gamepads.some((gamepad) => gamepad.buttons?.some((button) => button?.pressed))) { dismissPatchover(); return; }
+          requestAnimationFrame(pollGamepads);
+        }
+        migrateStorageKeys();
+        clearSiteCachesExceptPersistentStorage().finally(() => {
+          requestAnimationFrame(() => { overlay.focus({ preventScroll: true }); pollGamepads(); });
+        });
+      })();
+    </script>
+  </body>
+</html>

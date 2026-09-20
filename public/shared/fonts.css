@@ -1,0 +1,23 @@
+@font-face {
+  font-family: "Eight Bit Operator";
+  src: url("./8bitoperator.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eight Bit Operator Choice";
+  src: url("./8bitoperator.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Eight Bit Operator Plus";
+  src: url("./8bitOperatorPlus-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}

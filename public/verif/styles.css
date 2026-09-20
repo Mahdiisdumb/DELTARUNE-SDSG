@@ -1,0 +1,229 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #000;
+  color: #fff;
+}
+
+body {
+  font-family: "Eight Bit Operator", "Courier New", monospace;
+}
+
+.verify-shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  outline: none;
+}
+
+.verify-shell:focus,
+.verify-shell:focus-visible {
+  outline: none;
+}
+
+.verify-card {
+  width: min(720px, 100%);
+  text-align: center;
+}
+
+.verify-title {
+  margin: 0 0 28px;
+  font: 400 34px/1.2 "Eight Bit Operator", "Courier New", monospace;
+  letter-spacing: 0.05em;
+  text-shadow:
+    0.08em 0.08em 0 #000,
+    0.16em 0.16em 0 rgba(0, 0, 0, 0.5);
+}
+
+.verify-actions {
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+}
+
+.verify-button {
+  min-width: min(360px, 100%);
+  padding: 16px 24px 14px;
+  border: 2px solid #fff;
+  background: #000;
+  color: #fff;
+  font: 400 24px/1 "Eight Bit Operator", "Courier New", monospace;
+  letter-spacing: 0.06em;
+  text-shadow:
+    0.08em 0.08em 0 #000,
+    0.16em 0.16em 0 rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition:
+    color 120ms linear,
+    border-color 120ms linear;
+}
+
+.verify-button:hover,
+.verify-button.is-selected,
+.verify-button:focus-visible {
+  color: #ffff00;
+  border-color: #ffff00;
+  outline: none;
+}
+
+.verify-status,
+.verify-details {
+  min-height: 28px;
+  margin: 18px 0 0;
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.verify-status {
+  color: #ffff00;
+}
+
+.verify-status.is-error {
+  color: #ff7b7b;
+}
+
+.verify-status.is-success {
+  color: #a8ff8d;
+}
+
+.verify-details {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.verify-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.82);
+}
+
+.verify-modal[hidden] {
+  display: none;
+}
+
+.verify-modal-card {
+  width: min(520px, 100%);
+  padding: 28px;
+  border: 2px solid #fff;
+  background: #000;
+  text-align: center;
+}
+
+.verify-modal-title {
+  margin: 0;
+  font: 400 30px/1.12 "Eight Bit Operator", "Courier New", monospace;
+  letter-spacing: 0.05em;
+  text-shadow:
+    0.08em 0.08em 0 #000,
+    0.16em 0.16em 0 rgba(0, 0, 0, 0.5);
+}
+
+.verify-modal-copy,
+.verify-modal-status {
+  margin: 16px 0 0;
+  font-size: 21px;
+  line-height: 1.2;
+}
+
+.verify-modal-copy {
+  margin-top: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.verify-link {
+  color: #ffff7a;
+  text-decoration: none;
+  text-shadow:
+    0 0 6px rgba(255, 236, 104, 0.45),
+    0 0 12px rgba(255, 220, 54, 0.18);
+  transition:
+    color 120ms linear,
+    text-decoration-color 120ms linear,
+    text-shadow 120ms linear;
+}
+
+.verify-link:hover,
+.verify-link:focus-visible {
+  color: #ffff00;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  outline: none;
+  text-shadow:
+    0 0 8px rgba(255, 238, 112, 0.75),
+    0 0 16px rgba(255, 220, 54, 0.38);
+}
+
+.verify-modal-status {
+  color: #ff7b7b;
+}
+
+.verify-code-input {
+  width: 100%;
+  margin-top: 18px;
+  padding: 16px 18px 14px;
+  border: 2px solid #fff;
+  background: #000;
+  color: #fff;
+  text-align: center;
+  font: 400 34px/1 "Eight Bit Operator", "Courier New", monospace;
+  letter-spacing: 0.2em;
+}
+
+.verify-code-input:focus,
+.verify-code-input:focus-visible {
+  outline: none;
+  border-color: #ffff00;
+}
+
+.verify-modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+@media (max-width: 720px) {
+  .verify-title {
+    font-size: 26px;
+  }
+
+  .verify-button {
+    min-width: 100%;
+    font-size: 20px;
+  }
+
+  .verify-status,
+  .verify-details {
+    font-size: 18px;
+  }
+
+  .verify-modal-card {
+    padding: 22px;
+  }
+
+  .verify-modal-title {
+    font-size: 22px;
+  }
+
+  .verify-modal-copy,
+  .verify-modal-status {
+    font-size: 18px;
+  }
+
+  .verify-code-input {
+    font-size: 28px;
+  }
+
+  .verify-modal-actions {
+    flex-direction: column;
+  }
+}

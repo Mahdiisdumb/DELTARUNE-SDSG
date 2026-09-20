@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <!-- Analytics disabled in the local replica. -->
+    <style>
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            background: #000;
+            color-scheme: dark;
+        }
+    </style>
+
+<body oncontextmenu="return false;">
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" type="x-icon" href="fav.ico">
+    <title>DELTARUNE Chapter 5</title>
+    <link rel="stylesheet" href="../chapters.css">
+    <link rel="stylesheet" href="../play/loader.css">
+    <script src="../jszip.min.js"></script>
+    <script src="../play/loader.js"></script>
+    <script>
+        window.save_transfer_backend_config = {
+            endpoint: `${window.location.origin}/keys`,
+            createPath: "/api/codes",
+            resolvePath: "/api/codes/{code}",
+            timeoutMs: 3500,
+        };
+    </script>
+    <script src="../../setup/savetransfer.js"></script>
+    <script src="../../setup/savecodec.js"></script>
+    
+    <style id="save-manager-vinetrap-ui-fixes">
+      #saveManagerModal .save-code-title { margin-bottom: 4px !important; }
+      #saveManagerModal .save-code-subtitle,
+      #saveManagerModal .save-code-status,
+      #saveManagerModal #saveCodeStatus { margin-top: 0 !important; }
+      #saveManagerModal button:focus-visible,
+      #saveManagerModal input:focus-visible,
+      #saveManagerModal textarea:focus-visible,
+      #customMessageBox button:focus-visible {
+        outline: 3px solid #ffd866 !important;
+        outline-offset: 3px !important;
+      }
+    </style>
+  </head>
+
+    <body>
+        <div id="loadah">
+              <img src="../spr/tobyload.gif" id="tobyload" alt="Loading Toby Fox">
+              <div id="progressbar-container">
+                <div id="progressbar"></div>
+              </div>
+              <div id="loadahstatus">Initializing...</div>
+            </div>
+        <div id="game-container">
+            <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex="-1"></canvas>
+            <div class="loading">
+                <div class="spinner" id="spinner"></div>
+                <noscript class="nsmessage">This requires JavaScript and WebAssembly to be enabled in your browser.</noscript>
+                <div class="emscripten" id="status">Loading...</div>
+                <progress value="0" max="100" id="progress" hidden="1"></progress>
+            </div>
+            <div id="mobile-controls">
+                <div id="joystick-zone"></div>
+                <div id="button-zone">
+                    <img class="action-button" id="button-c" alt="C Button">
+                    <img class="action-button" id="button-x" alt="X Button">
+                    <img class="action-button" id="button-z" alt="Z Button">
+                    <div id="dpad-container"></div>
+                </div>
+            </div>
+            <div class="output-container" id="output-container" aria-hidden="true">
+                <section class="vine-menu-panel" role="dialog" aria-modal="true" aria-labelledby="vine-menu-title">
+                    <button id="closeUIButton" onclick="hideUI()" aria-label="Close menu">&times;</button>
+                    <h2 class="vine-menu-title" id="vine-menu-title">WinMenu</h2>
+                    <div class="vine-menu-list" id="vine-menu-list">
+                        <div class="vine-menu-soul" id="vine-menu-soul" aria-hidden="true"></div>
+                        <div id="mobile-buttons" class="vine-menu-group">
+                            <button class="output-button vine-menu-option" onclick="window.enterPositionMode()" title="Enter Positioning Mode to position the on-screen mobile controls">Position Controls?</button>
+                            <button class="output-button vine-menu-option" onclick="toggleDpadMode()" title="Toggle between the directional pad and joystick">Toggle D-Pad / Joystick!</button>
+                        </div>
+                        <button class="output-button vine-menu-option" onclick="window.location.href = 'debug'" title="Sends you to the Debug Mode version of DELTARUNE">Debug Mode?</button>
+                        <button class="output-button vine-menu-option" id="fullscreen" title="Toggle Fullscreen">Toggle Fullscreen?</button>
+                        <button class="output-button vine-menu-option" onclick="toggleConsole()" title="Lists emscripten/GM console output and loading progress">Toggle Console!</button>
+                        <button class="output-button vine-menu-option" id="stats-button" onclick="toggleFPS()" title="Toggles the external FPS Counter">Toggle FPS Counter!</button>
+                        <button class="output-button vine-menu-option" onclick="window.SAVEManager.openSAVEManager()" title="Manage your DELTARUNE SAVE files">SAVE Manager!</button>
+                        <button class="output-button vine-menu-option" id="colorpicker-trigger" onclick="openBorderColorPicker()" title="Changes color of the canvas' surrounding areas">Change Border Color?</button>
+                    </div>
+                    <textarea id="output" spellcheck="false" wrap="off"></textarea>
+                    <input id="colorpicker" type="color" onchange="changecolor(this)" title="Changes color of the canvas' surrounding areas" hidden>
+                </section>
+            </div>
+            <div id="message-container">
+                <div id="messages"></div>
+            </div>
+        </div>
+        <div id="customMessageBox" class="custom-message-box">
+            <div class="custom-message-box-content">
+                <p id="messageBoxText"></p>
+                <button id="messageBoxConfirmBtn">OK</button>
+            </div>
+        </div>
+        <div id="saveManagerModal" class="save-manager-modal">
+            <div class="save-manager-content">
+                <span class="close-button" onclick="window.SAVEManager.closeSAVEManager()">&times;</span>
+                <div class="save-manager-content2">
+                    <span class="minimize-button" onclick="window.SAVEManager.closeSMnoreload()">&dash;</span>
+                    <button class="output-button" onclick="toggleclear_site_cache()">Wipe all of your SAVEs?</button>
+                    <button id="exportAllBtn" class="output-button" onclick="SAVEManager.exportAllToZip()">Export all SAVEs to ZIP?</button>
+                    <h3>Current SAVE Files:</h3>
+                    <div id="saveFileList" class="save-file-list">
+                        <p style="text-align: center; color: #888;">No saves found. Try importing one or saving in-game first.</p>
+                    </div>
+                    <div class="save-code-section">
+                        <h3 class="save-code-title">SAVE Code Transfer</h3>
+                        <p class="save-code-status" id="saveCodeStatus" aria-live="polite">Generate a shortcode from your current SAVEs, or paste one to import.</p>
+                        <textarea id="saveCodeInput" class="save-manager-focusable" spellcheck="false" autocomplete="off" autocapitalize="characters" placeholder="Enter your shortcode, or click Generate Code for yours to show up here."></textarea>
+                        <div class="save-code-actions">
+                            <button type="button" class="save-manager-focusable" onclick="SAVEManager.importSaveCodeFromText()">Import Code?</button>
+                            <button type="button" class="save-manager-focusable" onclick="SAVEManager.generateSaveCode()">Generate Code?</button>
+                            <button type="button" class="save-manager-focusable" onclick="SAVEManager.copySaveCode()">Copy Code?</button>
+                        </div>
+                    </div>
+                    <div class="file-upload-section">
+                        <h3>Import Save Files?</h3>
+                        <input type="file" id="uploadFileInput" accept="*" multiple>
+                        <input type="text" id="uploadFileNameInput" placeholder="Enter the corresponding filename (e.g., filech1_0, dr.ini / for single file only)">
+                        <button onclick="SAVEManager.handleUpload()">Select File(s)!</button>
+                    </div>
+                </div>
+            </div>
+            <script>
+                window.addEventListener('load', () => {
+                    const mobileButtons = document.getElementById('mobile-buttons');
+                    if (mobileButtons && /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+                        mobileButtons.style.display = 'flex';
+                    }
+                    window.vine_menu?.refresh?.();
+                });
+            </script>
+            
+            <style id="save-manager-controller-style">
+                #saveManagerModal .save-manager-controller-selected,
+                #saveManagerModal button:focus,
+                #saveManagerModal input:focus,
+                #saveManagerModal textarea:focus,
+                #customMessageBox button:focus {
+                    outline: 3px solid #ffff00 !important;
+                    outline-offset: 3px !important;
+                    box-shadow: 0 0 0 2px #000, 0 0 12px rgba(255, 255, 0, 0.85) !important;
+                }
+                #saveManagerModal .save-manager-controller-selected::before {
+                    content: "♥ ";
+                    color: #ff0000;
+                    -webkit-text-fill-color: #ff0000;
+                }
+            </style>
+<script>
+                window.SAVEManager = (function() {
+                    function showMessageBox(message, onConfirm = null) {
+                        const messageBox = document.getElementById('customMessageBox');
+                        const messageBoxText = document.getElementById('messageBoxText');
+                        const messageBoxConfirmBtn = document.getElementById('messageBoxConfirmBtn');
+                        const messageBoxCancelBtn = document.getElementById('messageBoxCancelBtn');
+                        messageBoxText.textContent = message;
+                        messageBoxConfirmBtn.textContent = 'Alright!';
+                        if (messageBoxCancelBtn) {
+                            messageBoxCancelBtn.style.display = 'none';
+                        }
+                        messageBox.style.display = 'flex';
+                        messageBoxConfirmBtn.onclick = () => {
+                            messageBox.style.display = 'none';
+                            if (onConfirm) onConfirm();
+                        };
+                    }
+
+                    function confirmBox(message) {
+                        return new Promise((resolve) => {
+                            const messageBox = document.getElementById('customMessageBox');
+                            const messageBoxText = document.getElementById('messageBoxText');
+                            const messageBoxConfirmBtn = document.getElementById('messageBoxConfirmBtn');
+                            let messageBoxCancelBtn = document.getElementById('messageBoxCancelBtn');
+                            if (!messageBoxCancelBtn) {
+                                messageBoxCancelBtn = document.createElement('button');
+                                messageBoxCancelBtn.id = 'messageBoxCancelBtn';
+                                messageBoxCancelBtn.style.backgroundColor = '#6c757d';
+                                messageBoxCancelBtn.style.marginLeft = '10px';
+                                messageBoxConfirmBtn.parentNode.appendChild(messageBoxCancelBtn);
+                            }
+                            messageBoxText.textContent = message;
+                            messageBoxConfirmBtn.textContent = 'Sure!';
+                            messageBoxCancelBtn.textContent = 'Nah.';
+                            messageBoxCancelBtn.style.display = 'inline-block';
+                            messageBox.style.display = 'flex';
+                            messageBoxConfirmBtn.onclick = () => {
+                                messageBox.style.display = 'none';
+                                resolve(true);
+                            };
+                            messageBoxCancelBtn.onclick = () => {
+                                messageBox.style.display = 'none';
+                                resolve(false);
+                            };
+                        });
+                    }
+                    const DB_NAME = '/_savedata';
+                    const STORE_NAME = 'FILE_DATA';
+                    const DB_VERSION = 21;
+                    let db;
+                    async function openIndexedDB() {
+                        if (db) return db;
+                        if (!window.indexedDB) {
+                            showMessageBox("Your browser doesn't support IndexedDB. The SAVE Manager will not work.");
+                            throw new Error("IndexedDB not supported 😂 no saves for you gng");
+                        }
+                        const databases = await window.indexedDB.databases();
+                        const dbExists = databases.some(dbInfo => dbInfo.name === DB_NAME);
+                        if (!dbExists) {
+                            const errorMessage = `Database '${DB_NAME}' not found. Please SAVE in-game first!`;
+                            console.log(errorMessage);
+                            throw new Error(errorMessage);
+                        }
+                        return new Promise((resolve, reject) => {
+                            const request = indexedDB.open(DB_NAME, DB_VERSION);
+                            request.onerror = (event) => {
+                                console.error("IndexedDB error:", event.target.error);
+                                showMessageBox("Error opening IndexedDB: " + (event.target.error ? event.target.error.message : "Unknown error??"));
+                                reject("Error opening IndexedDB!");
+                            };
+                            request.onsuccess = (event) => {
+                                db = event.target.result;
+                                console.log("IndexedDB opened successfully.");
+                                resolve(db);
+                            };
+                            request.onupgradeneeded = (event) => {
+                                db = event.target.result;
+                                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                                    console.log(`Object store '${STORE_NAME}' not found. Waiting for the game to create it... smh`);
+                                }
+                            };
+                        });
+                    }
+                    async function getSaveFiles() {
+                        try {
+                            await openIndexedDB();
+                            const transaction = db.transaction([STORE_NAME], 'readonly');
+                            const objectStore = transaction.objectStore(STORE_NAME);
+                            const request = objectStore.getAll();
+                            return new Promise((resolve, reject) => {
+                                request.onsuccess = (event) => {
+                                    const files = event.target.result;
+                                    const fileNamesRequest = objectStore.getAllKeys();
+                                    fileNamesRequest.onsuccess = (eventKeys) => {
+                                        const fileNames = eventKeys.target.result;
+                                        const result = files.map((file, index) => ({
+                                            name: fileNames[index],
+                                            data: file
+                                        }));
+                                        resolve(result);
+                                    };
+                                    fileNamesRequest.onerror = (eventKeys) => {
+                                        console.error("Error getting file names:", eventKeys.target.error);
+                                        reject("Error getting file names: " + (eventKeys.target.error ? eventKeys.target.error.message : "Unknown error"));
+                                    };
+                                };
+                                request.onerror = (event) => {
+                                    console.error("Error getting save files from object store:", event.target.error);
+                                    reject("Error getting save files: " + (event.target.error ? event.target.error.message : "Unknown error"));
+                                };
+                            });
+                        } catch (error) {
+                            console.error("Error in getSaveFiles:", error);
+                            showMessageBox("Failed to retrieve save files: " + error.message);
+                            return [`vid/ch5_intro_en.mp4`, `vid/ch5_intro_jp.mp4`, ];
+                        }
+                    }
+                    async function displaySaveFiles() {
+                        const saveFileListDiv = document.getElementById('saveFileList');
+                        saveFileListDiv.innerHTML = '';
+                        try {
+                            const files = await getSaveFiles();
+                            if (files.length === 0) {
+                                saveFileListDiv.innerHTML = 'No saves found. Try importing one or saving in-game first.';
+                                return;
+                            }
+                            files.forEach(fileEntry => {
+                                const fileName = fileEntry.name;
+                                const fileData = fileEntry.data;
+                                const itemDiv = document.createElement('div');
+                                itemDiv.classList.add('save-file-item');
+                                const infoDiv = document.createElement('div');
+                                infoDiv.classList.add('save-file-info');
+                                const timestamp = fileData.timestamp ? new Date(fileData.timestamp).toLocaleString() : 'N/A';
+                                const size = fileData.contents ? fileData.contents.byteLength : 0;
+                                infoDiv.innerHTML = `
+                  
+                      
+                      
+                                  
+                                                <span>
+                                                    <strong>File:</strong> ${fileName.replace('/_savedata/', '')}
+                      
+                      
+                                  
+                                                </span>
+                                                <span>
+                                                    <strong>Last Modified:</strong> ${timestamp}
+                      
+                      
+                                  
+                                                </span>
+                                                <span>
+                                                    <strong>Size:</strong> ${size} bytes
+                      
+                      
+                                  
+                                                </span>
+                `;
+                                const actionsDiv = document.createElement('div');
+                                actionsDiv.classList.add('save-file-actions');
+                                const downloadBtn = document.createElement('button');
+                                downloadBtn.textContent = 'Download';
+                                downloadBtn.onclick = () => downloadSaveFile(fileName, fileData.contents);
+                                actionsDiv.appendChild(downloadBtn);
+                                const deleteBtn = document.createElement('button');
+                                deleteBtn.textContent = 'Delete';
+                                deleteBtn.classList.add('delete-btn');
+                                deleteBtn.onclick = async () => {
+                                    const confirmed = await confirmBox(`Are you sure you want to delete "${fileName}"?`);
+                                    if (confirmed) {
+                                        await deleteSaveFile(fileName);
+                                    }
+                                };
+                                actionsDiv.appendChild(deleteBtn);
+                                itemDiv.appendChild(infoDiv);
+                                itemDiv.appendChild(actionsDiv);
+                                saveFileListDiv.appendChild(itemDiv);
+                            });
+                        } catch (error) {
+                            console.error("Error displaying save files:", error);
+                            saveFileListDiv.innerHTML = `
+                                  
+                                  
+                                  
+                                                <p style="text-align: center; color: #FA1E4E;">Error loading files: ${error.message}</p>`;
+                        }
+                    }
+
+                    function downloadSaveFile(fileName, contents) {
+                        if (!contents) {
+                            showMessageBox("No content to download for this file!");
+                            return;
+                        }
+                        const blob = new Blob([contents], {
+                            type: 'application/octet-stream'
+                        });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        showMessageBox(`File "${fileName}" downloaded.`);
+                    }
+                    async function deleteSaveFile(fileName) {
+                        try {
+                            await openIndexedDB();
+                            const transaction = db.transaction([STORE_NAME], 'readwrite');
+                            const objectStore = transaction.objectStore(STORE_NAME);
+                            const request = objectStore.delete(fileName);
+                            return new Promise((resolve, reject) => {
+                                request.onsuccess = () => {
+                                    showMessageBox(`File "${fileName}" deleted successfully.`);
+                                    displaySaveFiles();
+                                    resolve();
+                                };
+                                request.onerror = (event) => {
+                                    console.error("Error deleting file:", event.target.error);
+                                    showMessageBox(`Error deleting file "${fileName}": ` + (event.target.error ? event.target.error.message : "Unknown error"));
+                                    reject("Error deleting file.");
+                                };
+                            });
+                        } catch (error) {
+                            console.error("Error in deleteSaveFile:", error);
+                            showMessageBox("Failed to delete save file: " + error.message);
+                        }
+                    }
+                    async function handleUpload() {
+                        const uploadFileInput = document.getElementById('uploadFileInput');
+                        const uploadFileNameInput = document.getElementById('uploadFileNameInput');
+                        const files = uploadFileInput.files;
+                        if (files.length === 0) {
+                            showMessageBox("Please select at least one file to upload.");
+                            return;
+                        }
+                        try {
+                            const uploadPromises = [];
+                            for (let i = 0; i < files.length; i++) {
+                                const file = files[i];
+                                let fileName = (files.length === 1 && uploadFileNameInput.value.trim()) ? uploadFileNameInput.value.trim() : file.name;
+                                fileName = fileName.replace(/^_savedata\//, '');
+                                fileName = fileName.replace(/^\//, '');
+                                if (!fileName) {
+                                    showMessageBox(`Invalid file name for "${file.name}" after processing. Skipping.`);
+                                    continue;
+                                }
+                                const arrayBuffer = await file.arrayBuffer();
+                                const uint8ArrayContents = new Uint8Array(arrayBuffer);
+                                const saveObject = {
+                                    timestamp: new Date(),
+                                    mode: 33206,
+                                    contents: uint8ArrayContents
+                                };
+                                const finalFileName = `/_savedata/${fileName}`;
+                                uploadPromises.push(saveSaveFile(finalFileName, saveObject));
+                            }
+                            await Promise.all(uploadPromises);
+                            showMessageBox(`${files.length} file(s) uploaded and saved successfully.`);
+                            uploadFileInput.value = '';
+                            uploadFileNameInput.value = '';
+                            displaySaveFiles();
+                        } catch (error) {
+                            console.error("Error uploading file(s):", error);
+                            showMessageBox("Failed to upload one or more files: " + error.message);
+                        }
+                    }
+                    async function exportAllToZip() {
+                        try {
+                            const files = await getSaveFiles();
+                            if (files.length === 0) {
+                                showMessageBox("No save files to export.");
+                                return;
+                            }
+                            const zip = new JSZip();
+                            files.forEach(fileEntry => {
+                                const fileName = fileEntry.name.replace(/^\/_savedata\//, '');
+                                const contents = fileEntry.data.contents;
+                                if (contents) {
+                                    const zipContents = (contents instanceof Int8Array) ? new Uint8Array(contents.buffer) : contents;
+                                    zip.file(fileName, zipContents);
+                                }
+                            });
+                            const zipBlob = await zip.generateAsync({
+                                type: 'blob'
+                            });
+                            const url = URL.createObjectURL(zipBlob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'Project Vinetrap_SAVEs.zip';
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                            showMessageBox("All save files exported to Project Vinetrap_SAVEs.zip.");
+                        } catch (error) {
+                            console.error("Error exporting to ZIP:", error);
+                            showMessageBox("Failed to export to ZIP: " + error.message);
+                        }
+                    }
+
+                    function getSaveTransferCodec() {
+                        return window.save_transfer_codec || window.saveTransferCodec || null;
+                    }
+                    async function loadScriptOnce(src, marker) {
+                        if (document.querySelector(`script[data-save-manager-loader="${marker}"]`)) {
+                            return new Promise((resolve) => setTimeout(resolve, 0));
+                        }
+                        await new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.src = src;
+                            script.dataset.saveManagerLoader = marker;
+                            script.onload = resolve;
+                            script.onerror = reject;
+                            document.head.appendChild(script);
+                        });
+                    }
+                    async function ensureSaveTransferCodec() {
+                        let codec = getSaveTransferCodec();
+                        if (codec?.decodeCode && (codec.buildBestCodeFromRecords || codec.buildCodeFromRecords)) {
+                            return codec;
+                        }
+                        if (!window.save_transfer_backend_config && !window.saveTransferBackendConfig) {
+                            try { await loadScriptOnce('../../setup/savetransfer.js', 'savetransfer'); } catch (_error) {}
+                        }
+                        try { await loadScriptOnce('../../setup/savecodec.js', 'savecodec'); } catch (_error) {}
+                        codec = getSaveTransferCodec();
+                        return codec?.decodeCode && (codec.buildBestCodeFromRecords || codec.buildCodeFromRecords) ? codec : null;
+                    }
+                    function setSaveCodeStatus(message, type = "") {
+                        const status = document.getElementById('saveCodeStatus');
+                        if (!status) return;
+                        status.textContent = message || "";
+                        status.classList.toggle('ok', type === 'ok');
+                        status.classList.toggle('error', type === 'error');
+                    }
+                    function normalizeSaveRecordName(fileName) {
+                        return String(fileName || '').replace(/^\/_savedata\//, '').replace(/^_savedata\//, '').replace(/^\//, '');
+                    }
+                    async function getSaveRecordsForCode() {
+                        const files = await getSaveFiles();
+                        return files
+                            .filter(fileEntry => fileEntry && fileEntry.data && fileEntry.data.contents)
+                            .map(fileEntry => ({
+                                name: normalizeSaveRecordName(fileEntry.name),
+                                timestampMs: fileEntry.data.timestamp ? new Date(fileEntry.data.timestamp).getTime() : Date.now(),
+                                mode: fileEntry.data.mode || 33206,
+                                contents: fileEntry.data.contents instanceof Uint8Array
+                                    ? fileEntry.data.contents
+                                    : new Uint8Array(fileEntry.data.contents)
+                            }));
+                    }
+                    async function generateSaveCode() {
+                        const codec = await ensureSaveTransferCodec();
+                        const input = document.getElementById('saveCodeInput');
+                        if (!codec || (!codec.buildBestCodeFromRecords && !codec.buildCodeFromRecords)) {
+                            setSaveCodeStatus('SAVE code tools are unavailable.', 'error');
+                            return;
+                        }
+                        try {
+                            setSaveCodeStatus('Building SAVE code...', 'ok');
+                            const records = await getSaveRecordsForCode();
+                            if (!records.length) {
+                                setSaveCodeStatus('No SAVE files found to encode.', 'error');
+                                return;
+                            }
+                            const result = codec.buildBestCodeFromRecords
+                                ? await codec.buildBestCodeFromRecords(records)
+                                : { code: await codec.buildCodeFromRecords(records), mode: 'raw' };
+                            if (input) {
+                                input.value = result.code || result.rawCode || '';
+                                input.focus();
+                                input.select();
+                            }
+                            setSaveCodeStatus(result.mode === 'short' ? 'Shortcode generated! It expires in 30 days.' : 'Raw SAVE code generated!', 'ok');
+                        } catch (error) {
+                            console.error('Unable to generate SAVE code:', error);
+                            setSaveCodeStatus(error?.message || 'Unable to generate SAVE code.', 'error');
+                        }
+                    }
+                    async function importSaveCodeFromText() {
+                        const codec = await ensureSaveTransferCodec();
+                        const input = document.getElementById('saveCodeInput');
+                        const rawCode = input ? input.value.trim() : '';
+                        if (!codec || !codec.decodeCode) {
+                            setSaveCodeStatus('SAVE code decoder is unavailable. Please refresh once and try again.', 'error');
+                            return;
+                        }
+                        if (!rawCode) {
+                            setSaveCodeStatus('Paste a SAVE code first.', 'error');
+                            input?.focus();
+                            return;
+                        }
+                        try {
+                            setSaveCodeStatus('Decoding SAVE code...', 'ok');
+                            const records = await codec.decodeCode(rawCode);
+                            if (!records || !records.length) {
+                                throw new Error('That SAVE code did not contain any SAVE files.');
+                            }
+                            await Promise.all(records.map(record => {
+                                const finalFileName = `/_savedata/${normalizeSaveRecordName(record.name)}`;
+                                return saveSaveFile(finalFileName, {
+                                    timestamp: new Date(record.timestampMs || Date.now()),
+                                    mode: record.mode || 33206,
+                                    contents: record.contents instanceof Uint8Array ? record.contents : new Uint8Array(record.contents)
+                                });
+                            }));
+                            await displaySaveFiles();
+                            setSaveCodeStatus(`${records.length} SAVE file(s) imported from code!`, 'ok');
+                            showMessageBox(`${records.length} SAVE file(s) imported from code!`);
+                        } catch (error) {
+                            console.error('Unable to import SAVE code:', error);
+                            setSaveCodeStatus(error?.message || 'Unable to import SAVE code.', 'error');
+                        }
+                    }
+                    async function copySaveCode() {
+                        const input = document.getElementById('saveCodeInput');
+                        const code = input ? input.value.trim() : '';
+                        if (!code) {
+                            setSaveCodeStatus('There is no SAVE code to copy yet.', 'error');
+                            return;
+                        }
+                        try {
+                            await navigator.clipboard.writeText(code);
+                            setSaveCodeStatus('SAVE code covined!', 'ok');
+                        } catch (error) {
+                            input?.focus();
+                            input?.select();
+                            setSaveCodeStatus('Could not copy automatically. The code is selected for you.', 'error');
+                        }
+                    }
+                    function getSaveManagerFocusableElements() {
+                        const modal = document.getElementById('saveManagerModal');
+                        if (!modal || modal.style.display === 'none') return [];
+                        return Array.from(modal.querySelectorAll('button, textarea, input, [tabindex]:not([tabindex="-1"])'))
+                            .filter(el => !el.disabled && el.offsetParent !== null);
+                    }
+                    function focusSaveManagerElement(delta) {
+                        const focusables = getSaveManagerFocusableElements();
+                        if (!focusables.length) return;
+                        const currentIndex = Math.max(0, focusables.indexOf(document.activeElement));
+                        const nextIndex = (currentIndex + delta + focusables.length) % focusables.length;
+                        focusables[nextIndex].focus();
+                    }
+                    let saveManagerGamepadLoop = 0;
+                    let saveManagerLastPad = { up: false, down: false, left: false, right: false, confirm: false, cancel: false };
+                    function updateSaveManagerGamepad() {
+                        const modal = document.getElementById('saveManagerModal');
+                        if (!modal || modal.style.display === 'none') {
+                            saveManagerGamepadLoop = 0;
+                            return;
+                        }
+                        const pad = Array.from(navigator.getGamepads ? navigator.getGamepads() : []).find(Boolean);
+                        if (pad) {
+                            const state = {
+                                up: pad.buttons[12]?.pressed || pad.axes[1] < -0.55,
+                                down: pad.buttons[13]?.pressed || pad.axes[1] > 0.55,
+                                left: pad.buttons[14]?.pressed || pad.axes[0] < -0.55,
+                                right: pad.buttons[15]?.pressed || pad.axes[0] > 0.55,
+                                confirm: pad.buttons[0]?.pressed || pad.buttons[1]?.pressed,
+                                cancel: pad.buttons[2]?.pressed || pad.buttons[9]?.pressed,
+                            };
+                            if ((state.down || state.right) && !(saveManagerLastPad.down || saveManagerLastPad.right)) focusSaveManagerElement(1);
+                            if ((state.up || state.left) && !(saveManagerLastPad.up || saveManagerLastPad.left)) focusSaveManagerElement(-1);
+                            if (state.confirm && !saveManagerLastPad.confirm && document.activeElement && typeof document.activeElement.click === 'function') document.activeElement.click();
+                            if (state.cancel && !saveManagerLastPad.cancel) closeSMnoreload();
+                            saveManagerLastPad = state;
+                        }
+                        saveManagerGamepadLoop = requestAnimationFrame(updateSaveManagerGamepad);
+                    }
+                    async function saveSaveFile(fileName, data) {
+                        try {
+                            await openIndexedDB();
+                            const transaction = db.transaction([STORE_NAME], 'readwrite');
+                            const objectStore = transaction.objectStore(STORE_NAME);
+                            const request = objectStore.put(data, fileName);
+                            return new Promise((resolve, reject) => {
+                                request.onsuccess = () => {
+                                    resolve();
+                                };
+                                request.onerror = (event) => {
+                                    console.error("Error saving file:", event.target.error);
+                                    showMessageBox("Error saving file: " + (event.target.error ? event.target.error.message : "Unknown error"));
+                                    reject("Error saving file.");
+                                };
+                            });
+                        } catch (error) {
+                            console.error("Error in saveSaveFile:", error);
+                            showMessageBox("Failed to save file: " + error.message);
+                        }
+                    }
+                    async function openSAVEManager() {
+                        const saveManagerModal = document.getElementById('saveManagerModal');
+                        saveManagerModal.style.display = 'flex';
+                        await displaySaveFiles();
+                        if (!saveManagerPauseToken) {
+                            saveManagerPauseToken = pause("save-manager");
+                        }
+                        requestAnimationFrame(() => {
+                            const first = getSaveManagerFocusableElements()[0];
+                            first?.focus?.();
+                        });
+                        if (!saveManagerGamepadLoop) {
+                            updateSaveManagerGamepad();
+                        }
+                    }
+
+                    function closeSAVEManager() {
+                        const saveManagerModal = document.getElementById('saveManagerModal');
+                        saveManagerModal.style.display = 'none';
+                        if (saveManagerGamepadLoop) {
+                            cancelAnimationFrame(saveManagerGamepadLoop);
+                            saveManagerGamepadLoop = 0;
+                        }
+                        if (saveManagerPauseToken) {
+                            resume(saveManagerPauseToken);
+                            saveManagerPauseToken = null;
+                        }
+                        if (typeof window.refreshCurrentPlayRunnerSafely === 'function') {
+                            window.refreshCurrentPlayRunnerSafely({ status_message: "Refreshing runner..." });
+                            return;
+                        }
+                        window.location.reload();
+                    }
+
+                    function closeSMnoreload() {
+                        const saveManagerModal = document.getElementById('saveManagerModal');
+                        saveManagerModal.style.display = 'none';
+                        if (saveManagerGamepadLoop) {
+                            cancelAnimationFrame(saveManagerGamepadLoop);
+                            saveManagerGamepadLoop = 0;
+                        }
+                        if (saveManagerPauseToken) {
+                            resume(saveManagerPauseToken);
+                            saveManagerPauseToken = null;
+                        }
+                    }
+                    let saveManagerPauseToken = null;
+                    let uploadFileNameInput = null;
+
+                    function protectInputFromGame(e) {
+                        if ((uploadFileNameInput && document.activeElement === uploadFileNameInput) || document.activeElement?.id === 'saveCodeInput') {
+                            e.stopImmediatePropagation();
+                        }
+                    }
+                    document.addEventListener('DOMContentLoaded', () => {
+                        uploadFileNameInput = document.getElementById('uploadFileNameInput');
+                        const uploadFileInput = document.getElementById('uploadFileInput');
+                        if (uploadFileInput && uploadFileNameInput) {
+                            if (uploadFileInput && uploadFileNameInput) {
+                                uploadFileInput.addEventListener('change', () => {
+                                    if (uploadFileInput.files.length === 1) {
+                                        uploadFileNameInput.disabled = false;
+                                        uploadFileNameInput.value = uploadFileInput.files[0].name;
+                                        uploadFileNameInput.placeholder = 'Enter the corresponding filename (e.g., filech1_0, dr.ini / for single file only)';
+                                    } else {
+                                        uploadFileNameInput.disabled = true;
+                                        uploadFileNameInput.value = '';
+                                        uploadFileNameInput.placeholder = 'Custom filenames do not work when selecting multiple files!';
+                                    }
+                                });
+                            }
+                        }
+                        if (uploadFileNameInput) {
+                            window.addEventListener('keydown', protectInputFromGame, true);
+                            window.addEventListener('keyup', protectInputFromGame, true);
+                            window.addEventListener('keypress', protectInputFromGame, true);
+                        }
+                    });
+                    return {
+                        openSAVEManager: openSAVEManager,
+                        closeSAVEManager: closeSAVEManager,
+                        closeSMnoreload: closeSMnoreload,
+                        handleUpload: handleUpload,
+                        showMessageBox: showMessageBox,
+                        confirmBox: confirmBox,
+                        openIndexedDB: openIndexedDB,
+                        exportAllToZip: exportAllToZip,
+                        generateSaveCode: generateSaveCode,
+                        importSaveCodeFromText: importSaveCodeFromText,
+                        copySaveCode: copySaveCode
+                    };
+                })();
+
+                (function installSaveManagerKeyboardAndControllerSupport() {
+                    if (window.__saveManagerKeyboardControllerSupportInstalled) return;
+                    window.__saveManagerKeyboardControllerSupportInstalled = true;
+
+                    function isSaveManagerOpen() {
+                        const modal = document.getElementById('saveManagerModal');
+                        return Boolean(modal && getComputedStyle(modal).display !== 'none' && !modal.hidden);
+                    }
+
+                    function getFocusableSaveManagerElements() {
+                        const modal = document.getElementById('saveManagerModal');
+                        return Array.from(modal?.querySelectorAll('button, input, textarea, select, [tabindex]:not([tabindex="-1"])') ?? [])
+                            .filter((element) => !element.disabled && element.offsetParent !== null);
+                    }
+
+                    function focusSaveManagerElement(delta) {
+                        const focusables = getFocusableSaveManagerElements();
+                        if (!focusables.length) return;
+                        let index = focusables.indexOf(document.activeElement);
+                        if (index < 0) index = 0;
+                        focusables[(index + delta + focusables.length) % focusables.length].focus({ preventScroll: true });
+                    }
+
+                    function isTypingElement(element) {
+                        if (!element) return false;
+                        const tagName = element.tagName;
+                        return tagName === 'TEXTAREA' || (tagName === 'INPUT' && !['button', 'submit', 'reset', 'file'].includes(String(element.type || '').toLowerCase()));
+                    }
+
+                    document.addEventListener('keydown', function(event) {
+                        if (!isSaveManagerOpen()) return;
+                        const active = document.activeElement;
+                        const typing = isTypingElement(active);
+
+                        if (event.key === 'Escape') {
+                            event.preventDefault();
+                            if (typeof closeSMnoreload === 'function') closeSMnoreload();
+                            return;
+                        }
+
+                        if (!typing && (event.key === 'ArrowDown' || event.key === 'ArrowRight')) {
+                            event.preventDefault();
+                            focusSaveManagerElement(1);
+                            return;
+                        }
+
+                        if (!typing && (event.key === 'ArrowUp' || event.key === 'ArrowLeft')) {
+                            event.preventDefault();
+                            focusSaveManagerElement(-1);
+                            return;
+                        }
+
+                        if (!typing && (event.key === 'Enter' || event.key === ' ')) {
+                            event.preventDefault();
+                            active?.click?.();
+                        }
+                    }, true);
+
+                    let latch = false;
+                    function pollSaveManagerGamepad() {
+                        if (isSaveManagerOpen()) {
+                            const active = document.activeElement;
+                            const typing = isTypingElement(active);
+                            const pad = navigator.getGamepads ? Array.from(navigator.getGamepads()).find(Boolean) : null;
+                            const axisY = pad?.axes?.[1] ?? 0;
+                            const axisX = pad?.axes?.[0] ?? 0;
+                            const down = pad?.buttons?.[13]?.pressed || (!typing && (axisY > 0.6 || axisX > 0.6));
+                            const up = pad?.buttons?.[12]?.pressed || (!typing && (axisY < -0.6 || axisX < -0.6));
+                            const confirm = pad?.buttons?.[0]?.pressed;
+                            const cancel = pad?.buttons?.[1]?.pressed || pad?.buttons?.[9]?.pressed;
+
+                            if ((down || up || confirm || cancel) && !latch) {
+                                latch = true;
+                                if (down) focusSaveManagerElement(1);
+                                else if (up) focusSaveManagerElement(-1);
+                                else if (confirm && !typing) document.activeElement?.click?.();
+                                else if (cancel && typeof closeSMnoreload === 'function') closeSMnoreload();
+                            } else if (!down && !up && !confirm && !cancel) {
+                                latch = false;
+                            }
+                        } else {
+                            latch = false;
+                        }
+                        requestAnimationFrame(pollSaveManagerGamepad);
+                    }
+                    requestAnimationFrame(pollSaveManagerGamepad);
+                })();
+
+                window.addEventListener('load', async () => {
+                    try {
+                        await window.SAVEManager.openIndexedDB();
+                    } catch (error) {
+                        console.error("Failed to initialize IndexedDB on load:", error);
+                    }
+                });
+                (function() {
+                    const originalLog = console.log;
+                    console.log = function(...args) {
+                        originalLog.apply(console, args);
+                        if (args.includes("Heading back to Chapter Select!")) {
+                            window.gate?.go_to_page("play/play/index.html") || (window.location.href = "../play/index.html");
+                        }
+                    };
+                })();
+                (function() {
+                    const originalLog = console.log;
+                    console.log = function(...args) {
+                        originalLog.apply(console, args);
+                        if (args.includes("i quit dude")) {
+                            window.gate?.go_to_page("app/index.html") || (window.location.href = "../../app/index.html");
+                        }
+                    };
+                })();
+                (function() {
+                    const originalLog = console.log;
+                    console.log = function(...args) {
+                        originalLog.apply(console, args);
+                        if (args.includes("ERROR in")) {
+                            if (confirm("Heya! Seems like DELTARUNE has crashed! Would you like to reload DELTARUNE?")) {
+                                if (typeof window.refreshCurrentPlayRunnerSafely === 'function') {
+                                    window.refreshCurrentPlayRunnerSafely({ status_message: "Refreshing runner..." });
+                                    return;
+                                }
+                                location.reload();
+                            }
+                        }
+                    };
+                })();
+            </script>
+            <script>
+                const konamiCode = ['v', 'i', 'n', 'e'];
+                let konamiIndex = 0;
+
+                function hideUI() {
+                    document.getElementById('output-container').classList.remove('visible');
+                    document.getElementById('message-container').classList.add('hidden-ui');
+                    window.vine_menu?.hide?.();
+                }
+
+                function showUI() {
+                    document.getElementById('output-container').classList.add('visible');
+                    document.getElementById('message-container').classList.remove('hidden-ui');
+                    window.vine_menu?.show?.();
+                    ensureAspectRatio();
+                }
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === konamiCode[konamiIndex]) {
+                        konamiIndex++;
+                        if (konamiIndex === konamiCode.length) {
+                            showUI();
+                            konamiIndex = 0;
+                        }
+                    } else {
+                        konamiIndex = 0;
+                    }
+                });
+                window.addEventListener('load', () => {
+                    document.getElementById('output-container').classList.remove('visible');
+                    document.querySelector('.loading').classList.add('hidden-ui');
+                    document.getElementById('message-container').classList.add('hidden-ui');
+                    window.vine_menu?.hide?.();
+                });
+            </script>
+            <script type="text/javascript">
+                if ("getGamepads" in navigator) {
+                    const sendGamepadInfo = (id) => {
+                        const firefoxRegex = /^([0-9a-fA-F]{4})-([0-9a-fA-F]{4})-(.*)$/;
+                        const chromeRegex = /^(.*) ?\(.*[vV][eE][nN][dD][oO][rR]: ?([0-9a-fA-F]{4}).*[pP][rR][oO][dD][uU][cC][tT]: ?([0-9a-fA-F]{4})\)$/;
+                        let name = undefined;
+                        let vendor = undefined;
+                        let product = undefined;
+                        const firefoxMatch = id.match(firefoxRegex);
+                        if (firefoxMatch) {
+                            name = firefoxMatch[3];
+                            vendor = firefoxMatch[1];
+                            product = firefoxMatch[2];
+                        } else {
+                            const chromeMatch = id.match(chromeRegex);
+                            if (chromeMatch) {
+                                name = chromeMatch[1];
+                                vendor = chromeMatch[2];
+                                product = chromeMatch[3];
+                            }
+                        }
+                        if (!name) {
+                            name = "";
+                        }
+                        if (!vendor) {
+                            vendor = "";
+                        }
+                        if (!product) {
+                            product = "";
+                        }
+                        name = name.toLowerCase();
+                        vendor = vendor.toLowerCase();
+                        product = product.toLowerCase();
+                        let ps = false;
+                        let dualsense = false;
+                        if (name.includes("dualsense") || name.includes("ps5")) {
+                            ps = true;
+                            dualsense = true;
+                        } else if (vendor == "054c" || name.includes("playstation") || name.includes("dualshock") || name.includes("ps1") || name.includes("ps2") || name.includes("ps3") || name.includes("ps4")) {
+                            ps = true;
+                        }
+                        const dataToSend = {
+                            gamepadIsPlaystation: ps,
+                            gamepadIsDualsense: dualsense
+                        };
+                        window.postMessage(dataToSend);
+                    };
+                    window.addEventListener("gamepadconnected", (event) => {
+                        const id = event.gamepad.id;
+                        console.log("Gamepad connected with ID: " + id);
+                        sendGamepadInfo(id);
+                    });
+                    setInterval(() => {
+                        const gamepads = navigator.getGamepads();
+                        let activityDetectedIndex = -1;
+                        for (const gp of gamepads) {
+                            if (!gp) {
+                                continue;
+                            }
+                            let activityDetected = false;
+                            if (gp.mapping !== "standard" || gp.axes.length < 2) {
+                                for (let i = 0; i < gp.axes.length; i++) {
+                                    activityDetected |= Math.abs(gp.axes[i]) >= 0.4;
+                                }
+                                for (let i = 0; i < gp.buttons.length; i++) {
+                                    activityDetected |= gp.buttons[i].pressed;
+                                }
+                            } else {
+                                activityDetected |= Math.abs(gp.axes[0]) >= 0.4 || Math.abs(gp.axes[1]) >= 0.4;
+                                for (let i = 0; i < gp.buttons.length; i++) {
+                                    activityDetected |= gp.buttons[i].pressed;
+                                }
+                            }
+                            if (activityDetected) {
+                                sendGamepadInfo(gp.id);
+                                break;
+                            }
+                        }
+                    }, 16);
+                }
+            </script>
+
+            <script type="text/javascript">
+                const CHANGE_ASPECT_RATIO = true;
+                var bodyElement = document.getElementsByTagName("body")[0];
+                var statusElement = document.getElementById("status");
+                var progressElement = document.getElementById("progress");
+                var spinnerElement = document.getElementById("spinner");
+                var canvasElement = document.getElementById("canvas");
+                var outputElement = document.getElementById("output");
+                var outputContainerElement = document.getElementById("output-container");
+                const messageContainerElement = document.getElementById("message-container");
+                const messagesElement = document.getElementById("messages");
+                canvasElement.addEventListener("click", function() {
+                    canvasElement.focus();
+                });
+                var actualDocumentTitle = document.title;
+                Object.defineProperty(document, "title", {
+                    set: function(val) {},
+                    get: function() {
+                        return actualDocumentTitle;
+                    }
+                });
+                let rollbackMessages = [];
+                const CONSOLE_layer_set_visible = "layer_set_visible() - could not find specified layer in current room";
+                const CONSOLE_layer_tilemap_get_id = "layer_tilemap_get_id() - specified tilemap not found";
+                const CONSOLE_layer_depth = "layer_depth() - can't find specified layer";
+                const CONSOLE_draw_tilemap = "draw_tilemap() - couldn't find specified tilemap";
+                const CONSOLE_layer_get_all_elements = "layer_get_all_elements() - can't find specified layer";
+                let clearRollbackMessagesTimeoutId = -1;
+                const showRollbackMessage = function(message) {
+                    let messages = "";
+                    rollbackMessages.push(message);
+                    rollbackMessages.forEach(m => messages += " < p > " + m + " < /p>");
+                    messagesElement.innerHTML = messages;
+                    messageContainerElement.style.display = 'block';
+                    if (clearRollbackMessagesTimeoutId !== -1) {
+                        clearTimeout(clearRollbackMessagesTimeoutId);
+                    }
+                    clearRollbackMessagesTimeoutId = setTimeout(clearRollbackMessages, 5000);
+                };
+                const clearRollbackMessages = function() {
+                    clearRollbackMessagesTimeoutId = -1;
+                    rollbackMessages = [];
+                    messageContainerElement.style.display = 'none';
+                };
+                var loadprogress = 0;
+                var startingHeight, startingWidth;
+                var startingAspect;
+                var Module = {
+                    preRun: [],
+                    postRun: [],
+                    print: (function() {
+                        var element = document.getElementById("output");
+                        if (element) element.value = "";
+                        return function(text) {
+                            if (text === "Starting WAD") {
+                                loadprogress += 1;
+                            }
+                            if (loadprogress === 1) {
+                                Module.setStatus(text);
+                            } else if (loadprogress >= 2) {
+                                Module.setStatus("");
+                            }
+                            if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(" ");
+                            if (text != CONSOLE_layer_set_visible && text != CONSOLE_layer_tilemap_get_id && text != CONSOLE_layer_depth && text != CONSOLE_draw_tilemap && text != CONSOLE_layer_get_all_elements) {
+                                console.log(text);
+                            }
+                            if (text === "Entering main loop.") {
+                                ensureAspectRatio();
+                                loadprogress += 1;
+                            }
+                            if (element) {
+                                if (text != CONSOLE_layer_set_visible && text != CONSOLE_layer_tilemap_get_id && text != CONSOLE_layer_depth && text != CONSOLE_draw_tilemap && text != CONSOLE_layer_get_all_elements) {
+                                    element.value += text + "\n";
+                                }
+                                element.scrollTop = element.scrollHeight;
+                            }
+                        };
+                    })(),
+                    printErr: function(text) {
+                        if (arguments.length > 1) text = Array.prototype.slice.call(arguments).join(" ");
+                        console.error(text);
+                    },
+                    canvas: (function() {
+                        return document.getElementById("canvas");
+                    })(),
+                    setStatus: function(text) {
+                        if (!Module.setStatus.last) Module.setStatus.last = {
+                            time: Date.now(),
+                            text: ""
+                        };
+                        if (text === Module.setStatus.last.text) return;
+                        var m = text.match(/([^(]+)\((\d+(\.\d+)?)\/(\d+)\)/);
+                        var now = Date.now();
+                        if (m && now - Module.setStatus.last.time < 30) return;
+                        if (text.includes("Downloading data...")) text = "Downloading data...";
+                        Module.setStatus.last.time = now;
+                        Module.setStatus.last.text = text;
+                        if (m) {
+                            text = m[1];
+                            progressElement.value = parseInt(m[2]) * 100;
+                            progressElement.max = parseInt(m[4]) * 100;
+                            progressElement.hidden = false;
+                            spinnerElement.hidden = false;
+                        } else {
+                            progressElement.value = null;
+                            progressElement.max = null;
+                            progressElement.hidden = true;
+                            if (!text) {
+                                spinnerElement.style.display = "none";
+                                canvasElement.style.display = "block";
+                            }
+                        }
+                        statusElement.innerHTML = text;
+                    },
+                    totalDependencies: 0,
+                    monitorRunDependencies: function(left) {
+                        this.totalDependencies = Math.max(this.totalDependencies, left);
+                        Module.setStatus(left ? "Preparing... (" + (this.totalDependencies - left) + "/" + this.totalDependencies + ")" : "All downloads complete.");
+                    },
+                };
+                Module.setStatus("Downloading...");
+                window.onerror = function(event) {
+                    spinnerElement.style.display = "none";
+                    Module.setStatus = function(text) {
+                        if (text) Module.printErr("[post-exception status] " + text);
+                    };
+                };
+                if (typeof window === "object") {
+                    Module['arguments'] = window.location.search.substr(1).trim().split('&');
+                    if (!Module['arguments'][0]) {
+                        Module['arguments'] = [];
+                    }
+                }
+
+                function openBorderColorPicker() {
+                    const colorPicker = document.getElementById("colorpicker");
+                    if (colorPicker) {
+                        colorPicker.click();
+                    }
+                }
+
+                function changecolor(el) {
+                    document.body.style.backgroundColor = el.value;
+                }
+
+                function toggleConsole() {
+                    var isShown = outputElement.style.display === "block";
+                    if (isShown) {
+                        outputElement.style.display = "none";
+                    } else {
+                        outputElement.style.display = "block";
+                        outputElement.scrollTop = outputElement.scrollHeight;
+                    }
+                }
+
+                async function toggleclear_site_cache() {
+                        const confirmed = await window.SAVEManager.confirmBox("This will clear the site cache. Most importantly, this will ALSO clear ALL OF YOUR SAVES. ONLY do this if you know what you are doing or if the site/game crashes repeatedly. Still wanna continue?");
+                        if (confirmed) {
+                            try {
+                                const dbs = await window.indexedDB.databases();
+                                dbs.forEach(db => {
+                                    window.indexedDB.deleteDatabase(db.name)
+                                });
+                                window.SAVEManager.showMessageBox("All site data has been cleared!\nPlease reload the page for it to take effect.");
+                            } catch (error) {
+                                console.error("Error clearing IndexedDB:", error);
+                                window.SAVEManager.showMessageBox("Failed to clear site data. Error: " + error.message);
+                            }
+                        }
+                    }
+                    (function(window) {
+                        let stats = null;
+                        let isLoaded = false;
+                        let isVisible = false;
+
+                        function animationLoop() {
+                            if (stats) {
+                                stats.update();
+                                requestAnimationFrame(animationLoop);
+                            }
+                        }
+
+                        function init() {
+                            stats = new Stats();
+                            stats.showPanel(0);
+                            document.body.appendChild(stats.dom);
+                            requestAnimationFrame(animationLoop);
+                            isLoaded = true;
+                            isVisible = true;
+                            console.log('FPS counter initialized!');
+                        }
+
+                        function toggle() {
+                            if (!isLoaded) {
+                                console.log('Loading stats.js library...');
+                                const script = document.createElement('script');
+                                script.src = 'https://mrdoob.github.io/stats.js/build/stats.min.js';
+                                script.onload = init;
+                                document.head.appendChild(script);
+                                return;
+                            }
+                            if (isVisible) {
+                                stats.dom.style.display = 'none';
+                                isVisible = false;
+                                console.log('FPS counter hidden.');
+                            } else {
+                                stats.dom.style.display = 'block';
+                                isVisible = true;
+                                console.log('FPS counter shown.');
+                            }
+                        }
+                        window.toggleFPS = toggle;
+                    })(window);
+                var g_pWadLoadCallback = undefined;
+
+                function setWadLoadCallback(_wadLoadCallback) {
+                    g_pWadLoadCallback = _wadLoadCallback;
+                }
+                var g_pAddAsyncMethod = -1;
+
+                function setAddAsyncMethod(asyncMethod) {
+                    g_pAddAsyncMethod = asyncMethod;
+                }
+                var g_pJSExceptionHandler = undefined;
+
+                function setJSExceptionHandler(exceptionHandler) {
+                    if (typeof exceptionHandler == "function") {
+                        g_pJSExceptionHandler = exceptionHandler;
+                    }
+                }
+
+                function hasJSExceptionHandler() {
+                    return (g_pJSExceptionHandler != undefined) && (typeof g_pJSExceptionHandler == "function");
+                }
+
+                function doJSExceptionHandler(exceptionJSON) {
+                    if (typeof g_pJSExceptionHandler == "function") {
+                        var exception = JSON.parse(exceptionJSON);
+                        g_pJSExceptionHandler(exception);
+                    }
+                }
+
+                function manifestFiles() {
+                    return ["game.unx", "runner.data", "runner.js", "../common/chapters/runner.wasm", "../common/chapters/audio-worklet.js", "../common/chapters/AUDIO_INTRONOISE.ogg", "vid/ch5_intro_en.mp4", "vid/ch5_intro_jp.mp4", "../mus/4rd_sanctuary.ogg", "../mus/4rd_sanctuary_noguit.ogg", "../mus/acid_tunnel.ogg", "../mus/afterrain_inside.ogg", "../mus/alarm_titlescreen.ogg", "../mus/alley_ambience.ogg", "../mus/alt_church_lobby.ogg", "../mus/ambientwater_weird.ogg", "../mus/annoying_prophecy.ogg", "../mus/april_2012.ogg", "../mus/asgore_conspiracy.ogg", "../mus/asgore_serious.ogg", "../mus/asgore_serious_drum_only_flowery_version.ogg", "../mus/asgore_serious_drum_only_low.ogg", "../mus/audio_anotherhim.ogg", "../mus/audio_darkness.ogg", "../mus/audio_defeat.ogg", "../mus/audio_drone.ogg", "../mus/audio_story.ogg", "../mus/baci_distort.ogg", "../mus/baci_perugina.ogg", "../mus/basement.ogg", "../mus/battle.ogg", "../mus/battle_preview.ogg", "../mus/battle_preview_crisp.ogg", "../mus/battle_vapor.ogg", "../mus/bell_ambience.ogg", "../mus/berdly_audience.ogg", "../mus/berdly_battle_heartbeat_true.ogg", "../mus/berdly_chase.ogg", "../mus/berdly_descend.ogg", "../mus/berdly_flashback.ogg", "../mus/berdly_theme.ogg", "../mus/bird.ogg", "../mus/birds_ch5.ogg", "../mus/blue_flower.ogg", "../mus/board4_rhythm.ogg", "../mus/board_4.ogg", "../mus/board_4_challenge.ogg", "../mus/board_lancer_dig.ogg", "../mus/board_ocean.ogg", "../mus/board_sword_music.ogg", "../mus/board_zelda.ogg", "../mus/boxing_boss.ogg", "../mus/boxing_boss_preview.ogg", "../mus/boxing_boss_preview_crisp.ogg", "../mus/boxing_game.ogg", "../mus/bratty_confession.ogg", "../mus/card_castle.ogg", "../mus/carol_appeared.ogg", "../mus/castle_foyer.ogg", "../mus/castle_funk_long.ogg", "../mus/castle_intro.ogg", "../mus/castle_loop.ogg", "../mus/castle_top.ogg", "../mus/castletown.ogg", "../mus/castletown_empty.ogg", "../mus/catti_confession.ogg", "../mus/ch2_credits.ogg", "../mus/ch3-practice_song_combined.ogg", "../mus/ch3-practice_song_noguit.ogg", "../mus/ch3_board1.ogg", "../mus/ch3_board2.ogg", "../mus/ch3_board3.ogg", "../mus/ch3_karaoke_example_guit_only.ogg", "../mus/ch3_karaoke_example_guitar_only_v2.ogg", "../mus/ch3_karaoke_example_noguit.ogg", "../mus/ch3_karaoke_example_noguitar_v2.ogg", "../mus/ch3_karaoke_example_together_ex.ogg", "../mus/ch3_karaoke_full.ogg", "../mus/ch3_karaoke_no_guitar.ogg", "../mus/ch3_karaoke_preview.ogg", "../mus/ch3_karaoke_preview_crisp.ogg", "../mus/ch3_south_of_the_border.ogg", "../mus/ch3_tvtime.ogg", "../mus/ch3_tvtime_guitar.ogg", "../mus/ch4_battle.ogg", "../mus/ch4_credits.ogg", "../mus/ch4_extra_boss.ogg", "../mus/ch4_first_intro.ogg", "../mus/ch4_first_intro_breaking.ogg", "../mus/ch5_credits.ogg", "../mus/ch5_intro_audio.ogg", "../mus/ch5_inversion_lake_chant.ogg", "../mus/ch5_weird_monologue.ogg", "../mus/ch5_weird_monologue_deep.ogg", "../mus/charjoined.ogg", "../mus/checkers.ogg", "../mus/church_dark_study.ogg", "../mus/church_hymn.ogg", "../mus/church_lightning.ogg", "../mus/church_lw.ogg", "../mus/church_lw_night.ogg", "../mus/church_wip.ogg", "../mus/church_zone2_alt_longer_test.ogg", "../mus/church_zone3.ogg", "../mus/cliff.ogg", "../mus/cliff_jump_ambience.ogg", "../mus/cliff_jump_ambience_nowind.ogg", "../mus/climb.ogg", "../mus/coolbeat.ogg", "../mus/cowboy_song.ogg", "../mus/creepychase.ogg", "../mus/creepydoor.ogg", "../mus/creepylandscape.ogg", "../mus/cyber.ogg", "../mus/cyber_battle.ogg", "../mus/cyber_battle_end.ogg", "../mus/cyber_battle_prelude.ogg", "../mus/cyber_shop.ogg", "../mus/cybercity.ogg", "../mus/cybercity_alt.ogg", "../mus/cybercity_old.ogg", "../mus/cyberhouse.ogg", "../mus/cybershop_christmas.ogg", "../mus/d.ogg", "../mus/dark_place.ogg", "../mus/darkchurch_intro.ogg", "../mus/deep_noise.ogg", "../mus/deltarune_logo_ch5_itoki.ogg", "../mus/deltarune_piano_collections_by_trevor_alan_gomes.ogg", "../mus/dog_balloon.ogg", "../mus/dogcheck.ogg", "../mus/dogroom.ogg", "../mus/dontforget.ogg", "../mus/elevator.ogg", "../mus/fanfare.ogg", "../mus/festival.ogg", "../mus/festival_after.ogg", "../mus/festival_night.ogg", "../mus/field_of_hopes.ogg", "../mus/field_of_hopes_insaneintherain_intro.ogg", "../mus/field_of_hopes_insaneintherain_loop.ogg", "../mus/field_of_hopes_preview.ogg", "../mus/field_of_hopes_preview_crisp.ogg", "../mus/findher.ogg", "../mus/flashback_excerpt.ogg", "../mus/flower_cafe.ogg", "../mus/flower_castle.ogg", "../mus/Flowerman_Arrangement.ogg", "../mus/flowery.ogg", "../mus/flowery_diner_romantic.ogg", "../mus/flowery_iog.ogg", "../mus/flowery_iog_extended.ogg", "../mus/flowery_sad.ogg", "../mus/flowery_skateboard.ogg", "../mus/forest.ogg", "../mus/friendship.ogg", "../mus/gallery.ogg", "../mus/gameover_short.ogg", "../mus/gerson_defeated.ogg", "../mus/gerson_theme_intro.ogg", "../mus/gerson_theme_nointro.ogg", "../mus/giant_queen_appears.ogg", "../mus/gigaqueen_pre.ogg", "../mus/glacier.ogg", "../mus/greenroom_detune.ogg", "../mus/happy_town.ogg", "../mus/heartbeat.ogg", "../mus/hip_shop.ogg", "../mus/home.ogg", "../mus/honksong.ogg", "../mus/inappropriate_recycling.ogg", "../mus/inukuma_wip.ogg", "../mus/jitterbug.ogg", "../mus/jitterbug_muffled.ogg", "../mus/joker.ogg", "../mus/keygen.ogg", "../mus/kikky_upgrade.ogg", "../mus/kingboss.ogg", "../mus/knight.ogg", "../mus/knight_appears.ogg", "../mus/kris_piano_lancer_waltz.ogg", "../mus/kris_piano_last_prophecy.ogg", "../mus/kris_piano_lower.ogg", "../mus/kris_piano_prophecy.ogg", "../mus/kris_piano_quiz.ogg", "../mus/kris_piano_rouxls.ogg", "../mus/kris_piano_sevenfour.ogg", "../mus/kris_piano_shop.ogg", "../mus/kris_piano_waitingroom.ogg", "../mus/lancer.ogg", "../mus/lancer_annoying.ogg", "../mus/lancer_susie.ogg", "../mus/lancerfight.ogg", "../mus/legend.ogg", "../mus/legend_altered.ogg", "../mus/man.ogg", "../mus/man_2.ogg", "../mus/man_nes.ogg", "../mus/mansion.ogg", "../mus/mansion_entrance.ogg", "../mus/me.ogg", "../mus/meeting_flower.ogg", "../mus/meeting_flower_cowboy.ogg", "../mus/meeting_flower_orange.ogg", "../mus/meeting_flower_orange_highpitch.ogg", "../mus/meeting_flower_upbeat_drum.ogg", "../mus/menu.ogg", "../mus/mike.ogg", "../mus/mike_zone.ogg", "../mus/miniboss_new_section_idea_wip.ogg", "../mus/minigame_kart.ogg", "../mus/muffled_rain.ogg", "../mus/mus_birdnoise.ogg", "../mus/mus_confession.ogg", "../mus/mus_date_fight.ogg", "../mus/mus_date_tense.ogg", "../mus/mus_introcar.ogg", "../mus/mus_knightthought.ogg", "../mus/mus_race.ogg", "../mus/mus_school.ogg", "../mus/mus_temloopshort.ogg", "../mus/muscle.ogg", "../mus/music_guys.ogg", "../mus/music_guys_intro.ogg", "../mus/napsta_alarm.ogg", "../mus/nes_intro_extended_part2.ogg", "../mus/newscast.ogg", "../mus/night_ambience.ogg", "../mus/nightmare_boss_heavy.ogg", "../mus/nightmare_boss_links.ogg", "../mus/nightmare_nes.ogg", "../mus/noelle.ogg", "../mus/noelle_distant.ogg", "../mus/noelle_ferriswheel.ogg", "../mus/noelle_house_wip.ogg", "../mus/noelle_normal.ogg", "../mus/noelle_school.ogg", "../mus/noelleshouseoutside.ogg", "../mus/northernlight.ogg", "../mus/ocean.ogg", "../mus/oldman_helps_out.ogg", "../mus/ominous_message.ogg", "../mus/ominous_stab_harsh.ogg", "../mus/ominous_stab_harsh_2.ogg", "../mus/ominous_worse.ogg", "../mus/piano_ambience.ogg", "../mus/pianpian.ogg", "../mus/pink.ogg", "../mus/pink_theme.ogg", "../mus/pink_theme_mad.ogg", "../mus/pirate_zone.ogg", "../mus/prejoker.ogg", "../mus/pumpkin_boss.ogg", "../mus/queen.ogg", "../mus/queen_boss.ogg", "../mus/queen_car_radio.ogg", "../mus/queen_intro.ogg", "../mus/quiet_autumn.ogg", "../mus/quiet_church.ogg", "../mus/rain.ogg", "../mus/raining.ogg", "../mus/raining_in_church2.ogg", "../mus/rakuichi_buster_wip.ogg", "../mus/rhythm_3rd_sanctuary_guit.ogg", "../mus/rhythm_3rd_sanctuary_noguit.ogg", "../mus/rhythm_knockdown_combined.ogg", "../mus/rhythm_knockdown_no_guit.ogg", "../mus/root_8bit.ogg", "../mus/rouxls_battle.ogg", "../mus/rtenna_zoom.ogg", "../mus/rudebuster_boss.ogg", "../mus/running_water.ogg", "../mus/ruruskaado.ogg", "../mus/s_neo.ogg", "../mus/s_neo_clip.ogg", "../mus/sadchord2.ogg", "../mus/second_church.ogg", "../mus/shinkansen.ogg", "../mus/shop1.ogg", "../mus/shop_3.ogg", "../mus/silly_printer.ogg", "../mus/sinedrone_danger.ogg", "../mus/sinedrone_danger_high.ogg", "../mus/sink_noise.ogg", "../mus/smallpiano_room.ogg", "../mus/sound_battle_bg.ogg", "../mus/spamton_basement.ogg", "../mus/spamton_battle.ogg", "../mus/spamton_dance.ogg", "../mus/spamton_happy.ogg", "../mus/spamton_house.ogg", "../mus/spamton_laugh_noise.ogg", "../mus/spamton_meeting.ogg", "../mus/spamton_meeting_intro.ogg", "../mus/spamton_neo_after.ogg", "../mus/spamton_neo_meeting.ogg", "../mus/spamton_neo_mix_ex_wip.ogg", "../mus/static_placeholder.ogg", "../mus/statue2_level1.ogg", "../mus/statue2_level2.ogg", "../mus/statue2_level3.ogg", "../mus/statue2_level4.ogg", "../mus/statue2_level5.ogg", "../mus/statue_chord_basic.ogg", "../mus/statue_level1.ogg", "../mus/statue_level2.ogg", "../mus/statue_level3.ogg", "../mus/statue_level4.ogg", "../mus/stealth.ogg", "../mus/strongwind_loop.ogg", "../mus/susie_diner.ogg", "../mus/tenna_battle.ogg", "../mus/tenna_battle_guitar.ogg", "../mus/tenna_battle_old.ogg", "../mus/tenna_battle_preview.ogg", "../mus/tenna_battle_preview_crisp.ogg", "../mus/tenna_island.ogg", "../mus/tense.ogg", "../mus/the_dark_truth.ogg", "../mus/the_holy.ogg", "../mus/thrash_rating.ogg", "../mus/thrashmachine.ogg", "../mus/tin_night.ogg", "../mus/tinnitus.ogg", "../mus/titan_battle.ogg", "../mus/titan_pre.ogg", "../mus/titan_spawn.ogg", "../mus/titan_tower.ogg", "../mus/town.ogg", "../mus/town_day.ogg", "../mus/trank.ogg", "../mus/tv_changingroom.ogg", "../mus/tv_game.ogg", "../mus/tv_hall_of_fame.ogg", "../mus/tv_infrontof.ogg", "../mus/tv_noise.ogg", "../mus/tv_results_screen.ogg", "../mus/tv_static_bad.ogg", "../mus/tv_world.ogg", "../mus/tvromance.ogg", "../mus/vs_susie.ogg", "../mus/w.ogg", "../mus/wet_tapdancing.ogg", "../mus/wet_tapdancing2.ogg", "../mus/wet_tapdancing_failed.ogg", "../mus/wind.ogg", "../mus/wind_highplace.ogg"].join(";");
+                }
+
+                function onFirstFrameRendered() {}
+
+                function onGameSetWindowSize(width, height) {
+                    if (startingHeight === undefined && startingWidth === undefined) {
+                        console.log("Initial window size set to width: " + width + ", height: " + height);
+                        startingHeight = height;
+                        startingWidth = width;
+                        startingAspect = startingWidth / startingHeight;
+                        ensureAspectRatio();
+                    }
+                }
+
+                function ensureAspectRatio() {
+                    if (canvasElement === undefined || (startingHeight === undefined && startingWidth === undefined)) {
+                        return;
+                    }
+                    canvasElement.classList.add("active");
+                    const maxWidth = window.innerWidth;
+                    const maxHeight = window.innerHeight;
+                    canvasElement.style.left = "0px";
+                    canvasElement.style.top = "0px";
+                    canvasElement.style.transform = "none";
+                    canvasElement.style.margin = "0";
+                    canvasElement.style.height = maxHeight + "px";
+                    canvasElement.style.width = maxWidth + "px";
+                }
+
+                let gamePauseTokenSequence = 0;
+                const gamePauseTokens = [];
+
+                function pause(reason = "generic") {
+                    if (!canvasElement.classList.contains("active")) {
+                        return null;
+                    }
+
+                    const pauseToken = `${String(reason || "generic")}:${++gamePauseTokenSequence}`;
+                    const shouldPauseGame = gamePauseTokens.length === 0;
+                    gamePauseTokens.push(pauseToken);
+
+                    if (shouldPauseGame) {
+                        GM_pause();
+                    }
+
+                    canvasElement.classList.add("paused");
+                    canvasElement.classList.remove("unpaused");
+                    return pauseToken;
+                }
+
+                function resume(pauseToken = null) {
+                    let releasedPause = false;
+
+                    if (pauseToken !== null && pauseToken !== undefined) {
+                        let pauseTokenIndex = gamePauseTokens.lastIndexOf(pauseToken);
+
+                        if (pauseTokenIndex === -1 && typeof pauseToken === "string" && !pauseToken.includes(":")) {
+                            const pauseTokenPrefix = `${pauseToken}:`;
+
+                            for (let index = gamePauseTokens.length - 1; index >= 0; index -= 1) {
+                                if (String(gamePauseTokens[index] || "").startsWith(pauseTokenPrefix)) {
+                                    pauseTokenIndex = index;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (pauseTokenIndex !== -1) {
+                            gamePauseTokens.splice(pauseTokenIndex, 1);
+                            releasedPause = true;
+                        }
+                    } else if (gamePauseTokens.length > 0) {
+                        gamePauseTokens.pop();
+                        releasedPause = true;
+                    }
+
+                    if (!releasedPause || gamePauseTokens.length > 0) {
+                        return false;
+                    }
+
+                    GM_unpause();
+                    canvasElement.classList.remove("paused");
+                    canvasElement.classList.add("unpaused");
+                    ensureAspectRatio();
+                    return true;
+                }
+
+                function quitIfSupported() {
+                    if (window.oprt && window.oprt.closeTab) {
+                        window.oprt.closeTab();
+                    } else if (window.chrome && window.chrome.runtime && window.chrome.runtime.sendMessage) {
+                        window.chrome.runtime.sendMessage('mpojjmidmnpcpopbebmecmjdkdbgdeke', {
+                            command: 'closeTab'
+                        });
+                    }
+                }
+
+                function enterFullscreenIfSupported() {
+                    if (!window.oprt || !window.oprt.enterFullscreen) {
+                        return;
+                    }
+                    window.oprt.enterFullscreen();
+                    let viewStatus = GM_get_view_status();
+                    viewStatus.fullscreen = true;
+                    GM_set_view_status(viewStatus);
+                }
+
+                function lockOrientationIfSupported() {
+                    if (!window.oprt || !window.oprt.lockPortraitOrientation || !window.oprt.lockLandscapeOrientation) {
+                        return;
+                    }
+                    let viewStatus = GM_get_view_status();
+                    if (viewStatus.landscape === true && viewStatus.portrait === false) {
+                        window.oprt.lockPortraitOrientation();
+                    } else if (viewStatus.landscape === false && viewStatus.portrait === true) {
+                        window.oprt.lockPortraitOrientation();
+                    }
+                }
+                const resizeObserver = new ResizeObserver(() => {
+                    window.requestAnimationFrame(ensureAspectRatio);
+                    setTimeout(() => window.requestAnimationFrame(ensureAspectRatio), 100);
+                });
+                resizeObserver.observe(document.body);
+                window.addEventListener("load", (event) => {
+                    if ((!window.oprt || !window.oprt.enterFullscreen) && (!window.chrome || !window.chrome.runtime || !window.chrome.runtime.sendMessage)) {
+                        var quitButton = document.getElementById("quitButton");
+                        if (quitButton) quitButton.hidden = true;
+                    }
+                });
+                if (/Android|iPhone|iPod/i.test(navigator.userAgent)) {
+                    bodyElement.className = "scrollingDisabled";
+                    outputContainerElement.hidden = true;
+                }
+                setWadLoadCallback(() => {
+                    enterFullscreenIfSupported();
+                    lockOrientationIfSupported();
+                });
+            </script>
+            <script src="../vine.js"></script>
+            <script>
+                function getFullscreenHost() {
+                    try {
+                        if (window.parent && window.parent !== window && typeof window.parent.toggleContainerFullscreen === 'function') {
+                            return window.parent;
+                        }
+                    } catch (_error) {}
+                    return null;
+                }
+
+                function refreshFullscreenLayout() {
+                    window.requestAnimationFrame(ensureAspectRatio);
+                    setTimeout(() => window.requestAnimationFrame(ensureAspectRatio), 100);
+                    setTimeout(() => window.requestAnimationFrame(ensureAspectRatio), 250);
+                }
+
+                async function toggleFullscreen() {
+                    const host = getFullscreenHost();
+                    if (host) {
+                        await host.toggleContainerFullscreen();
+                        refreshFullscreenLayout();
+                        return;
+                    }
+
+                    const doc = document;
+                    const docEl = doc.documentElement;
+                    const isInFullscreen = () => doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement;
+                    const requestFullscreen = () => {
+                        if (docEl.requestFullscreen) docEl.requestFullscreen();
+                        else if (docEl.webkitRequestFullscreen) docEl.webkitRequestFullscreen();
+                        else if (docEl.mozRequestFullScreen) docEl.mozRequestFullScreen();
+                        else if (docEl.msRequestFullscreen) docEl.msRequestFullscreen();
+                    };
+                    const exitFullscreen = () => {
+                        if (doc.exitFullscreen) doc.exitFullscreen();
+                        else if (doc.webkitExitFullscreen) doc.webkitExitFullscreen();
+                        else if (doc.mozCancelFullScreen) doc.mozCancelFullScreen();
+                        else if (doc.msExitFullscreen) doc.msExitFullscreen();
+                    };
+                    if (!isInFullscreen()) {
+                        await requestFullscreen();
+                    } else {
+                        await exitFullscreen();
+                    }
+
+                    refreshFullscreenLayout();
+                }
+                const originalConsoleLog = console.log;
+                console.log = function(...args) {
+                    originalConsoleLog.apply(console, args);
+                    if (args.some(arg => typeof arg === 'string' && arg.includes('Toggling fullscreen...'))) {
+                        toggleFullscreen();
+                    }
+                };
+                document.addEventListener('DOMContentLoaded', () => {
+                    const fullscreenButton = document.getElementById('fullscreen');
+                    if (fullscreenButton) {
+                        fullscreenButton.addEventListener('click', toggleFullscreen);
+                    }
+                });
+                document.addEventListener('fullscreenchange', refreshFullscreenLayout);
+                document.addEventListener('webkitfullscreenchange', refreshFullscreenLayout);
+                document.addEventListener('mozfullscreenchange', refreshFullscreenLayout);
+                document.addEventListener('MSFullscreenChange', refreshFullscreenLayout);
+            </script>
+            <script>
+                (function() {
+                    const originalConsoleLog = console.log;
+                    let isVideoUnlocked = false;
+                    let activeVideoPauseToken = null;
+                    const video = document.createElement('video');
+                    video.playsInline = true;
+                    video.controls = false;
+                    video.preload = 'auto';
+                    video.style.display = 'none';
+                    video.style.backgroundColor = 'black';
+                    video.style.position = 'fixed';
+                    video.style.zIndex = '998';
+                    video.style.objectFit = 'cover';
+                    document.body.appendChild(video);
+
+                    async function resolveVideoUrl(filePath) {
+                        const resolveProtectedUrl = window.resolveProtectedPlayAssetUrl || window.resolve_protected_play_asset_url;
+                        if (typeof resolveProtectedUrl === 'function') {
+                            return await resolveProtectedUrl(filePath);
+                        }
+                        return filePath;
+                    }
+
+                    async function prepareVideoSource(filePath) {
+                        const resolvedUrl = await resolveVideoUrl(filePath);
+                        if (video.getAttribute('src') !== resolvedUrl) {
+                            video.src = resolvedUrl;
+                            try { video.load(); } catch (_loadError) {}
+                        }
+                        return true;
+                    }
+
+                    async function unlockVideoPlayback() {
+                        if (isVideoUnlocked) return;
+                        isVideoUnlocked = true;
+                        video.pause();
+                        video.currentTime = 0;
+                        video.muted = false;
+                        console.log('Chapter 5 video source prepared and waiting for game signal.');
+                    }
+
+                    async function playChapter5Video(filePath) {
+                        if (!isVideoUnlocked) {
+                            console.warn('Chapter 5 video tried to play before user interaction unlocked it.');
+                            return;
+                        }
+                        try {
+                            await prepareVideoSource(filePath);
+                        } catch (error) {
+                            console.error('Unable to resolve Chapter 5 video:', error);
+                            return;
+                        }
+                        const canvas = document.getElementById('canvas');
+                        if (!canvas) {
+                            console.error('Canvas element not found for Chapter 5 video.');
+                            return;
+                        }
+                        if (typeof pause === 'function') {
+                            activeVideoPauseToken = pause('chapter5-video');
+                        }
+                        const canvasRect = canvas.getBoundingClientRect();
+                        video.style.top = `${canvasRect.top}px`;
+                        video.style.left = `${canvasRect.left}px`;
+                        video.style.width = `${canvasRect.width}px`;
+                        video.style.height = `${canvasRect.height}px`;
+                        canvas.style.visibility = 'hidden';
+                        video.style.display = 'block';
+                        video.currentTime = 0;
+                        await video.play();
+                    }
+
+                    function stopChapter5Video() {
+                        const canvas = document.getElementById('canvas');
+                        video.pause();
+                        video.style.display = 'none';
+                        if (canvas) canvas.style.visibility = 'visible';
+                        if (typeof resume === 'function') {
+                            resume(activeVideoPauseToken);
+                        }
+                        activeVideoPauseToken = null;
+                    }
+
+                    console.log = function(...args) {
+                        originalConsoleLog.apply(console, args);
+                        for (const arg of args) {
+                            if (typeof arg !== 'string') continue;
+                            const text = arg.trim();
+                            if (!text.startsWith('webvideo|chapter=5|')) continue;
+                            const fields = Object.create(null);
+                            for (const part of text.slice('webvideo|'.length).split('|')) {
+                                const splitIndex = part.indexOf('=');
+                                if (splitIndex >= 0) {
+                                    fields[part.slice(0, splitIndex)] = part.slice(splitIndex + 1);
+                                }
+                            }
+                            if (fields.event === 'play' && fields.file) {
+                                void playChapter5Video(fields.file);
+                            } else if (fields.event === 'end' || fields.event === 'stop') {
+                                stopChapter5Video();
+                            }
+                        }
+                    };
+
+                    video.addEventListener('ended', stopChapter5Video);
+
+                    document.addEventListener('DOMContentLoaded', () => {
+                        const canvas = document.getElementById('canvas');
+                        const buttonsToMonitor = ['button-z', 'button-x', 'button-c'];
+                        buttonsToMonitor.forEach(id => {
+                            const button = document.getElementById(id);
+                            if (button) {
+                                button.addEventListener('click', unlockVideoPlayback, { once: true });
+                            }
+                        });
+                        if (canvas) {
+                            canvas.addEventListener('mousedown', unlockVideoPlayback, { once: true });
+                        }
+                        document.addEventListener('keydown', unlockVideoPlayback, { once: true });
+                    });
+                })();
+            </script>
+            <script>
+                window.startPlayLoader();
+            </script>
+            <script src="../mobile.js"></script>
+            <script src="../verif.js"></script>
+            <script src="../joy.js"></script>
+    </body>
+
+</html>
