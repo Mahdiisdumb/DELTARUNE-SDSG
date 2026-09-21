@@ -5800,6 +5800,7 @@
     const fetch_options = { cache: "no-store", mode: "cors" };
     const started_at = performance.now();
 
+    // ── 1) Try the single full file first ──────────────────────────────────
     let response;
     try {
       response = await window.fetch(github_url, fetch_options);
@@ -5815,6 +5816,53 @@
       throw create_loader_error(
         `GitHub raw fetch failed for ${normalized_asset_path}: ${fetch_error?.message || fetch_error}`,
         { retryable: true, status_code: 0 },
+      );
+    }
+
+    // ── 2) On 404, look for split part files (game.unx.000, .001, …) ────────
+    if (response.status === 404) {
+      log_loader_cache_debug("github raw 404; probing for part files", {
+        asset_path: normalized_asset_path,
+        play_scope: normalized_play_scope,
+        url_info,
+      });
+
+      const part_result = await try_fetch_github_raw_part_files(
+        normalized_asset_path,
+        normalized_play_scope,
+        options,
+      );
+
+      if (part_result) {
+        log_loader_cache_debug("github raw part-files combined", {
+          asset_path: normalized_asset_path,
+          play_scope: normalized_play_scope,
+          parts: part_result.part_count,
+          bytes: part_result.plaintext_bytes.byteLength,
+          duration_ms: Math.round(performance.now() - started_at),
+        });
+        return {
+          url: null,
+          source: "github-raw-parts",
+          downloaded_bytes: part_result.plaintext_bytes.byteLength,
+          decoded_bytes: part_result.plaintext_bytes.byteLength,
+          duration_ms: Math.round(performance.now() - started_at),
+          plaintext_bytes: part_result.plaintext_bytes,
+          original_type: part_result.original_type || "application/octet-stream",
+        };
+      }
+
+      // No parts found either — hard fail with the original 404.
+      log_loader_cache_debug("github raw download failed", {
+        asset_path: normalized_asset_path,
+        play_scope: normalized_play_scope,
+        status: 404,
+        status_text: "Not Found (no part files either)",
+        url_info,
+      });
+      throw create_loader_error(
+        `GitHub raw returned 404 for ${normalized_asset_path} (no part files found).`,
+        { retryable: false, status_code: 404 },
       );
     }
 
@@ -5860,6 +5908,120 @@
       duration_ms: Math.round(performance.now() - started_at),
       plaintext_bytes,
       original_type: response.headers.get("content-type") || "application/octet-stream",
+    };
+  }
+
+  /**
+   * Probe for sequential part files:  asset.000, asset.001, asset.002, …
+   * Returns null if the first part (.000) does not exist.
+   * Downloads every consecutive part and concatenates them in order.
+   */
+  async function try_fetch_github_raw_part_files(asset_path, play_scope, options = {}) {
+    const normalized_asset_path = normalize_asset_path(asset_path);
+    const normalized_play_scope = normalize_play_scope(play_scope);
+    const fetch_options = { cache: "no-store", mode: "cors" };
+    const max_parts = 64; // safety cap
+    const part_buffers = [];
+    let original_type = "application/octet-stream";
+    let total_downloaded = 0;
+
+    // First part must exist; otherwise this is not a split asset.
+    const first_part_url = build_github_raw_asset_url(
+      `${normalized_asset_path}.000`,
+      normalized_play_scope,
+    );
+
+    let first_response;
+    try {
+      first_response = await window.fetch(first_part_url, fetch_options);
+    } catch (_err) {
+      return null;
+    }
+
+    if (!first_response.ok) {
+      return null;
+    }
+
+    original_type = first_response.headers.get("content-type") || original_type;
+    const first_bytes = await read_response_bytes_with_progress(first_response, (progress) => {
+      if (typeof options.on_progress === "function") {
+        options.on_progress({
+          downloaded_bytes: progress.downloaded_bytes,
+          total_bytes: 0, // unknown until all parts are found
+          done: false,
+        });
+      }
+    });
+    part_buffers.push(first_bytes);
+    total_downloaded += first_bytes.byteLength;
+
+    log_loader_cache_debug("github raw part found", {
+      asset_path: normalized_asset_path,
+      part: 0,
+      bytes: first_bytes.byteLength,
+      url: first_part_url,
+    });
+
+    // Download consecutive parts until a 404 (or non-ok) response.
+    for (let part_index = 1; part_index < max_parts; part_index += 1) {
+      const part_suffix = String(part_index).padStart(3, "0");
+      const part_url = build_github_raw_asset_url(
+        `${normalized_asset_path}.${part_suffix}`,
+        normalized_play_scope,
+      );
+
+      let part_response;
+      try {
+        part_response = await window.fetch(part_url, fetch_options);
+      } catch (_err) {
+        break; // network error mid-parts → stop and use what we have
+      }
+
+      if (!part_response.ok) {
+        // Expected: last part reached (404). Stop.
+        break;
+      }
+
+      const part_bytes = await read_response_bytes_with_progress(part_response, (progress) => {
+        if (typeof options.on_progress === "function") {
+          options.on_progress({
+            downloaded_bytes: total_downloaded + progress.downloaded_bytes,
+            total_bytes: 0,
+            done: false,
+          });
+        }
+      });
+
+      part_buffers.push(part_bytes);
+      total_downloaded += part_bytes.byteLength;
+
+      log_loader_cache_debug("github raw part found", {
+        asset_path: normalized_asset_path,
+        part: part_index,
+        bytes: part_bytes.byteLength,
+        url: part_url,
+      });
+    }
+
+    if (part_buffers.length === 0) {
+      return null;
+    }
+
+    // Concatenate all parts into one contiguous Uint8Array.
+    const combined = combine_uint8_array_chunks(part_buffers);
+
+    if (typeof options.on_progress === "function") {
+      options.on_progress({
+        downloaded_bytes: combined.byteLength,
+        total_bytes: combined.byteLength,
+        done: true,
+      });
+    }
+
+    return {
+      plaintext_bytes: combined,
+      original_type,
+      part_count: part_buffers.length,
     };
   }
 
