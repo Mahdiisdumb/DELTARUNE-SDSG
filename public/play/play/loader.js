@@ -255,7 +255,7 @@
   let preload_timer_override_text = "";
   let base_module_template = null;
   let base_window_error_handler = null;
-  let shared_audio_pack_enabled = true;
+  let shared_audio_pack_enabled = false; // GitHub fork: no base_index_audio.pak — use individual shared/ files
   let shared_audio_pack_promise = null;
   let shared_audio_pack_member_paths = null;
   let shared_audio_pack_member_paths_promise = null;
@@ -990,7 +990,9 @@
   }
 
   function should_use_shared_audio_pack() {
-    return get_audio_caching_mode() === "on";
+    // GitHub raw host has no mus/base_index_audio.pak. Always use the
+    // individual files under public/local-assets/shared/ instead.
+    return false;
   }
 
   function should_skip_manifest_music() {
@@ -5677,21 +5679,51 @@
   const GITHUB_RAW_BASE =
     "https://raw.githubusercontent.com/Mahdiisdumb/DELTARUNE-SDSG/main/public/local-assets";
 
-  function build_github_raw_asset_url(asset_path, play_scope) {
+  function build_github_raw_asset_url(asset_path, play_scope, filename_case = "as-is") {
     const normalized_asset_path = normalize_asset_path(asset_path);
     const normalized_play_scope = normalize_play_scope(play_scope);
 
     // Shared music / common / borders live under the "shared" folder on disk.
+    // Never use the audio pak here — individual files under shared/ only.
     const cache_scope = get_asset_cache_scope(normalized_asset_path, normalized_play_scope);
     let folder = cache_scope === "shared" ? "shared" : normalized_play_scope;
 
-    // Case-insensitive: GitHub raw is case-sensitive and this repo stores
-    // files in lowercase (game.unx, runner.data, …).
+    // Folders in this repo are always lowercase.
     const lower_folder = String(folder || "").toLowerCase();
-    const lower_asset = String(normalized_asset_path || "").toLowerCase();
 
-    const url = `${GITHUB_RAW_BASE}/${lower_folder}/${lower_asset}`;
+    // Filename case: GitHub raw is case-sensitive. Most files are lowercase,
+    // but some (e.g. AUDIO_INTRONOISE.ogg) are uppercase. Callers can request
+    // a specific case variant when probing after a 404.
+    let asset_for_url = String(normalized_asset_path || "");
+    const slash = asset_for_url.lastIndexOf("/");
+    const dir = slash >= 0 ? asset_for_url.slice(0, slash + 1).toLowerCase() : "";
+    let base = slash >= 0 ? asset_for_url.slice(slash + 1) : asset_for_url;
+
+    if (filename_case === "lower") {
+      base = base.toLowerCase();
+    } else if (filename_case === "upper") {
+      // Uppercase only the name portion; keep extension casing sensible.
+      const dot = base.lastIndexOf(".");
+      if (dot > 0) {
+        base = base.slice(0, dot).toUpperCase() + base.slice(dot).toLowerCase();
+      } else {
+        base = base.toUpperCase();
+      }
+    } else {
+      // as-is: still lowercase the directory prefixes inside the asset path
+      // but preserve the basename's original characters from the request.
+      base = base; // keep
+    }
+
+    asset_for_url = dir + base;
+
+    const url = `${GITHUB_RAW_BASE}/${lower_folder}/${asset_for_url}`;
     return url.replace(/([^:]\/)\/+/g, "$1"); // collapse any double slashes
+  }
+
+  function github_raw_filename_case_variants() {
+    // Order matters: try the most common layouts first.
+    return ["as-is", "lower", "upper"];
   }
 
   // Only game.unx / *.unx / *.unxw are split into .000 .001 … part files.
@@ -5799,75 +5831,96 @@
     const normalized_asset_path = normalize_asset_path(asset_path);
     const normalized_play_scope = normalize_play_scope(play_scope);
 
-    // GitHub-raw mode: skip signed CDN manifest / Bunny entirely.
-    // Still require a play session so ownership gate stays intact.
+    // GitHub-raw mode: individual files under public/local-assets/ only.
+    // Never pull from the shared audio pak — shared/ holds real .ogg files.
     if (!play_session?.session_id || options.disable_cdn === true) {
       return null;
     }
 
-    const github_url = build_github_raw_asset_url(normalized_asset_path, normalized_play_scope);
-    const url_info = get_cdn_debug_url_info(github_url);
     const can_use_parts = should_try_unx_part_files(normalized_asset_path);
-
-    log_loader_cache_debug("github raw download start", {
-      asset_path: normalized_asset_path,
-      play_scope: normalized_play_scope,
-      url_info,
-      can_use_parts,
-    });
-
     const fetch_options = { cache: "no-store", mode: "cors" };
     const started_at = performance.now();
+    const case_variants = github_raw_filename_case_variants();
 
-    // For known-split game.unx assets, prefer parts immediately when the
-    // single file is missing. Still try the full file first (chapter1/play
-    // ship a single game.unx).
-    let response;
-    try {
-      response = await window.fetch(github_url, fetch_options);
-    } catch (fetch_error) {
-      log_loader_cache_debug("github raw fetch threw", {
+    let last_status = 0;
+    let last_url_info = null;
+    let response = null;
+    let used_case = "as-is";
+    let github_url = "";
+
+    for (const filename_case of case_variants) {
+      github_url = build_github_raw_asset_url(
+        normalized_asset_path,
+        normalized_play_scope,
+        filename_case,
+      );
+      const url_info = get_cdn_debug_url_info(github_url);
+      last_url_info = url_info;
+
+      log_loader_cache_debug("github raw download start", {
         asset_path: normalized_asset_path,
         play_scope: normalized_play_scope,
-        duration_ms: Math.round(performance.now() - started_at),
-        error: get_error_debug_info(fetch_error),
+        filename_case,
         url_info,
-        browser: { online: navigator.onLine },
+        can_use_parts,
       });
 
-      // Network throw: if this is an unx, still try parts as a fallback.
-      if (can_use_parts) {
-        const part_result = await try_fetch_github_raw_part_files(
-          normalized_asset_path,
-          normalized_play_scope,
-          options,
-        );
-        if (part_result) {
-          return {
-            url: null,
-            source: "github-raw-parts",
-            downloaded_bytes: part_result.plaintext_bytes.byteLength,
-            decoded_bytes: part_result.plaintext_bytes.byteLength,
-            duration_ms: Math.round(performance.now() - started_at),
-            plaintext_bytes: part_result.plaintext_bytes,
-            original_type: part_result.original_type || "application/octet-stream",
-          };
+      try {
+        response = await window.fetch(github_url, fetch_options);
+      } catch (fetch_error) {
+        log_loader_cache_debug("github raw fetch threw", {
+          asset_path: normalized_asset_path,
+          play_scope: normalized_play_scope,
+          filename_case,
+          duration_ms: Math.round(performance.now() - started_at),
+          error: get_error_debug_info(fetch_error),
+          url_info,
+          browser: { online: navigator.onLine },
+        });
+
+        // Network throw: for unx, fall through to part-file assembly.
+        if (can_use_parts) {
+          break;
         }
+        throw create_loader_error(
+          `GitHub raw fetch failed for ${normalized_asset_path}: ${fetch_error?.message || fetch_error}`,
+          { retryable: true, status_code: 0 },
+        );
       }
 
-      throw create_loader_error(
-        `GitHub raw fetch failed for ${normalized_asset_path}: ${fetch_error?.message || fetch_error}`,
-        { retryable: true, status_code: 0 },
-      );
+      last_status = response.status;
+
+      if (response.ok) {
+        used_case = filename_case;
+        break;
+      }
+
+      // 404 → try next case variant (AUDIO_INTRONOISE.ogg vs audio_intronoise.ogg).
+      if (response.status === 404) {
+        log_loader_cache_debug("github raw 404; trying next case variant", {
+          asset_path: normalized_asset_path,
+          filename_case,
+          url_info,
+        });
+        response = null;
+        continue;
+      }
+
+      // Non-404 error — stop probing cases.
+      break;
     }
 
-    // On 404 for .unx only → assemble part files (.000 .001 …).
-    if (response.status === 404 && can_use_parts) {
+    // unx 404 after all case variants → assemble .000 .001 … parts
+    if ((!response || response.status === 404) && can_use_parts) {
       log_loader_cache_debug("github raw 404 on unx; probing for part files", {
         asset_path: normalized_asset_path,
         play_scope: normalized_play_scope,
-        url_info,
-        first_part_url: build_github_raw_asset_url(`${normalized_asset_path}.000`, normalized_play_scope),
+        url_info: last_url_info,
+        first_part_url: build_github_raw_asset_url(
+          `${normalized_asset_path}.000`,
+          normalized_play_scope,
+          "lower",
+        ),
       });
 
       if (typeof options.on_status === "function") {
@@ -5901,15 +5954,15 @@
         };
       }
 
-      log_loader_cache_debug("github raw download failed", {
-        asset_path: normalized_asset_path,
-        play_scope: normalized_play_scope,
-        status: 404,
-        status_text: "Not Found (no part files either)",
-        url_info,
-      });
       throw create_loader_error(
         `GitHub raw returned 404 for ${normalized_asset_path} (no part files found).`,
+        { retryable: false, status_code: 404 },
+      );
+    }
+
+    if (!response) {
+      throw create_loader_error(
+        `GitHub raw returned 404 for ${normalized_asset_path}.`,
         { retryable: false, status_code: 404 },
       );
     }
@@ -5917,8 +5970,9 @@
     log_loader_cache_debug("github raw fetch response", {
       asset_path: normalized_asset_path,
       play_scope: normalized_play_scope,
+      filename_case: used_case,
       duration_ms: Math.round(performance.now() - started_at),
-      url_info,
+      url_info: last_url_info,
       response: get_response_debug_info(response),
       browser: { online: navigator.onLine },
     });
@@ -5929,7 +5983,7 @@
         play_scope: normalized_play_scope,
         status: response.status,
         status_text: response.statusText,
-        url_info,
+        url_info: last_url_info,
       });
       throw create_loader_error(
         `GitHub raw returned ${response.status} for ${normalized_asset_path}.`,
@@ -5944,8 +5998,9 @@
     log_loader_cache_debug("github raw download complete", {
       asset_path: normalized_asset_path,
       play_scope: normalized_play_scope,
+      filename_case: used_case,
       bytes: plaintext_bytes.byteLength,
-      url_info,
+      url_info: last_url_info,
     });
 
     return {
