@@ -5671,6 +5671,9 @@
   // Assets live in: public/local-assets/{scope|shared}/{asset_path}
   // Example: rush/runner.data →
   //   https://raw.githubusercontent.com/Mahdiisdumb/DELTARUNE-SDSG/main/public/local-assets/rush/runner.data
+  //
+  // GitHub raw paths are CASE-SENSITIVE. Everything in this repo is stored
+  // lowercase, so we always lowercase the path segments when building URLs.
   const GITHUB_RAW_BASE =
     "https://raw.githubusercontent.com/Mahdiisdumb/DELTARUNE-SDSG/main/public/local-assets";
 
@@ -5682,15 +5685,29 @@
     const cache_scope = get_asset_cache_scope(normalized_asset_path, normalized_play_scope);
     let folder = cache_scope === "shared" ? "shared" : normalized_play_scope;
 
-    // Map common/chapters/* → shared/common/chapters/* style paths when needed.
-    // On disk the local-assets layout is:
-    //   local-assets/rush/runner.data
-    //   local-assets/chapter1/...
-    //   local-assets/shared/...
-    //   local-assets/play/...
-    // so just prefix the folder.
-    const url = `${GITHUB_RAW_BASE}/${folder}/${normalized_asset_path}`;
+    // Case-insensitive: GitHub raw is case-sensitive and this repo stores
+    // files in lowercase (game.unx, runner.data, …).
+    const lower_folder = String(folder || "").toLowerCase();
+    const lower_asset = String(normalized_asset_path || "").toLowerCase();
+
+    const url = `${GITHUB_RAW_BASE}/${lower_folder}/${lower_asset}`;
     return url.replace(/([^:]\/)\/+/g, "$1"); // collapse any double slashes
+  }
+
+  // Only game.unx / *.unx / *.unxw are split into .000 .001 … part files.
+  // Never probe parts for audio (.ogg) or other assets.
+  function should_try_unx_part_files(asset_path) {
+    const lower = String(normalize_asset_path(asset_path) || "").toLowerCase();
+    if (!lower) return false;
+    // Exact game.unx, debug/game.unx, or any path ending in .unx / .unxw
+    // but NOT already a numbered part like game.unx.000
+    if (/\.\d{3}$/.test(lower)) return false;
+    return (
+      lower === "game.unx"
+      || lower.endsWith("/game.unx")
+      || lower.endsWith(".unx")
+      || lower.endsWith(".unxw")
+    );
   }
 
   // Kept for compatibility with any remaining callers; always returns "".
@@ -5790,17 +5807,21 @@
 
     const github_url = build_github_raw_asset_url(normalized_asset_path, normalized_play_scope);
     const url_info = get_cdn_debug_url_info(github_url);
+    const can_use_parts = should_try_unx_part_files(normalized_asset_path);
 
     log_loader_cache_debug("github raw download start", {
       asset_path: normalized_asset_path,
       play_scope: normalized_play_scope,
       url_info,
+      can_use_parts,
     });
 
     const fetch_options = { cache: "no-store", mode: "cors" };
     const started_at = performance.now();
 
-    // ── 1) Try the single full file first ──────────────────────────────────
+    // For known-split game.unx assets, prefer parts immediately when the
+    // single file is missing. Still try the full file first (chapter1/play
+    // ship a single game.unx).
     let response;
     try {
       response = await window.fetch(github_url, fetch_options);
@@ -5813,19 +5834,47 @@
         url_info,
         browser: { online: navigator.onLine },
       });
+
+      // Network throw: if this is an unx, still try parts as a fallback.
+      if (can_use_parts) {
+        const part_result = await try_fetch_github_raw_part_files(
+          normalized_asset_path,
+          normalized_play_scope,
+          options,
+        );
+        if (part_result) {
+          return {
+            url: null,
+            source: "github-raw-parts",
+            downloaded_bytes: part_result.plaintext_bytes.byteLength,
+            decoded_bytes: part_result.plaintext_bytes.byteLength,
+            duration_ms: Math.round(performance.now() - started_at),
+            plaintext_bytes: part_result.plaintext_bytes,
+            original_type: part_result.original_type || "application/octet-stream",
+          };
+        }
+      }
+
       throw create_loader_error(
         `GitHub raw fetch failed for ${normalized_asset_path}: ${fetch_error?.message || fetch_error}`,
         { retryable: true, status_code: 0 },
       );
     }
 
-    // ── 2) On 404, look for split part files (game.unx.000, .001, …) ────────
-    if (response.status === 404) {
-      log_loader_cache_debug("github raw 404; probing for part files", {
+    // On 404 for .unx only → assemble part files (.000 .001 …).
+    if (response.status === 404 && can_use_parts) {
+      log_loader_cache_debug("github raw 404 on unx; probing for part files", {
         asset_path: normalized_asset_path,
         play_scope: normalized_play_scope,
         url_info,
+        first_part_url: build_github_raw_asset_url(`${normalized_asset_path}.000`, normalized_play_scope),
       });
+
+      if (typeof options.on_status === "function") {
+        options.on_status(`Combining game.unx parts...`);
+      } else if (!loader_hidden) {
+        set_loader_status("Combining game.unx parts...");
+      }
 
       const part_result = await try_fetch_github_raw_part_files(
         normalized_asset_path,
@@ -5852,7 +5901,6 @@
         };
       }
 
-      // No parts found either — hard fail with the original 404.
       log_loader_cache_debug("github raw download failed", {
         asset_path: normalized_asset_path,
         play_scope: normalized_play_scope,
@@ -5912,42 +5960,71 @@
   }
 
   /**
-   * Probe for sequential part files:  asset.000, asset.001, asset.002, …
+   * Probe for sequential game.unx part files only:
+   *   game.unx.000, game.unx.001, game.unx.002, …
    * Returns null if the first part (.000) does not exist.
    * Downloads every consecutive part and concatenates them in order.
    */
   async function try_fetch_github_raw_part_files(asset_path, play_scope, options = {}) {
     const normalized_asset_path = normalize_asset_path(asset_path);
     const normalized_play_scope = normalize_play_scope(play_scope);
+
+    // Hard guard: never assemble parts for non-unx assets (ogg, etc.).
+    if (!should_try_unx_part_files(normalized_asset_path)) {
+      return null;
+    }
+
     const fetch_options = { cache: "no-store", mode: "cors" };
-    const max_parts = 64; // safety cap
+    const max_parts = 64;
     const part_buffers = [];
     let original_type = "application/octet-stream";
     let total_downloaded = 0;
 
     // First part must exist; otherwise this is not a split asset.
+    // Path is lowercased inside build_github_raw_asset_url.
     const first_part_url = build_github_raw_asset_url(
       `${normalized_asset_path}.000`,
       normalized_play_scope,
     );
 
+    log_loader_cache_debug("github raw probing first part", {
+      asset_path: normalized_asset_path,
+      play_scope: normalized_play_scope,
+      first_part_url,
+    });
+
     let first_response;
     try {
       first_response = await window.fetch(first_part_url, fetch_options);
-    } catch (_err) {
+    } catch (err) {
+      log_loader_cache_debug("github raw first part threw", {
+        asset_path: normalized_asset_path,
+        error: get_error_debug_info(err),
+        first_part_url,
+      });
       return null;
     }
 
     if (!first_response.ok) {
+      log_loader_cache_debug("github raw first part missing", {
+        asset_path: normalized_asset_path,
+        status: first_response.status,
+        first_part_url,
+      });
       return null;
     }
 
     original_type = first_response.headers.get("content-type") || original_type;
     const first_bytes = await read_response_bytes_with_progress(first_response, (progress) => {
+      if (typeof options.on_status === "function") {
+        options.on_status(`Downloading game.unx part 1...`);
+      } else if (!loader_hidden) {
+        set_loader_status("Downloading game.unx part 1...");
+      }
       if (typeof options.on_progress === "function") {
         options.on_progress({
           downloaded_bytes: progress.downloaded_bytes,
-          total_bytes: 0, // unknown until all parts are found
+          total_bytes: 0,
           done: false,
         });
       }
@@ -5973,13 +6050,29 @@
       let part_response;
       try {
         part_response = await window.fetch(part_url, fetch_options);
-      } catch (_err) {
-        break; // network error mid-parts → stop and use what we have
+      } catch (err) {
+        log_loader_cache_debug("github raw part threw; stopping", {
+          asset_path: normalized_asset_path,
+          part: part_index,
+          error: get_error_debug_info(err),
+        });
+        break;
       }
 
       if (!part_response.ok) {
-        // Expected: last part reached (404). Stop.
+        log_loader_cache_debug("github raw part end", {
+          asset_path: normalized_asset_path,
+          part: part_index,
+          status: part_response.status,
+          collected_parts: part_buffers.length,
+        });
         break;
+      }
+
+      if (typeof options.on_status === "function") {
+        options.on_status(`Downloading game.unx part ${part_index + 1}...`);
+      } else if (!loader_hidden) {
+        set_loader_status(`Downloading game.unx part ${part_index + 1}...`);
       }
 
       const part_bytes = await read_response_bytes_with_progress(part_response, (progress) => {
@@ -6007,7 +6100,6 @@
       return null;
     }
 
-    // Concatenate all parts into one contiguous Uint8Array.
     const combined = combine_uint8_array_chunks(part_buffers);
 
     if (typeof options.on_progress === "function") {
@@ -6016,6 +6108,12 @@
         total_bytes: combined.byteLength,
         done: true,
       });
+    }
+
+    if (typeof options.on_status === "function") {
+      options.on_status(`Combined ${part_buffers.length} game.unx parts.`);
+    } else if (!loader_hidden) {
+      set_loader_status(`Combined ${part_buffers.length} game.unx parts.`);
     }
 
     return {
