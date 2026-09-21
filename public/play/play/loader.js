@@ -5660,21 +5660,47 @@
     }
 
     const entry = response_data.entries[0];
+    if (entry?.url) {
+      entry.url = normalize_cdn_entry_url(entry.url);
+    }
     cdn_asset_manifest_cache.set(cache_key, entry);
     return entry;
   }
 
-  const fallback_cdn_origin_for_408 = "https://vinetrap.b-cdn.net";
+  // ── GitHub raw asset host (replaces BunnyCDN / vinetrap.b-cdn.net) ──────────
+  // Assets live in: public/local-assets/{scope|shared}/{asset_path}
+  // Example: rush/runner.data →
+  //   https://raw.githubusercontent.com/Mahdiisdumb/DELTARUNE-SDSG/main/public/local-assets/rush/runner.data
+  const GITHUB_RAW_BASE =
+    "https://raw.githubusercontent.com/Mahdiisdumb/DELTARUNE-SDSG/main/public/local-assets";
 
-  function get_408_fallback_cdn_url(url) {
-    try {
-      const parsed_url = new URL(url, window.location.href);
-      parsed_url.protocol = "https:";
-      parsed_url.host = "vinetrap.b-cdn.net";
-      return parsed_url.toString();
-    } catch (_url_error) {
-      return "";
-    }
+  function build_github_raw_asset_url(asset_path, play_scope) {
+    const normalized_asset_path = normalize_asset_path(asset_path);
+    const normalized_play_scope = normalize_play_scope(play_scope);
+
+    // Shared music / common / borders live under the "shared" folder on disk.
+    const cache_scope = get_asset_cache_scope(normalized_asset_path, normalized_play_scope);
+    let folder = cache_scope === "shared" ? "shared" : normalized_play_scope;
+
+    // Map common/chapters/* → shared/common/chapters/* style paths when needed.
+    // On disk the local-assets layout is:
+    //   local-assets/rush/runner.data
+    //   local-assets/chapter1/...
+    //   local-assets/shared/...
+    //   local-assets/play/...
+    // so just prefix the folder.
+    const url = `${GITHUB_RAW_BASE}/${folder}/${normalized_asset_path}`;
+    return url.replace(/([^:]\/)\/+/g, "$1"); // collapse any double slashes
+  }
+
+  // Kept for compatibility with any remaining callers; always returns "".
+  function get_408_fallback_cdn_url(_url) {
+    return "";
+  }
+
+  function normalize_cdn_entry_url(url) {
+    // No longer needed for GitHub raw (already HTTPS), but keep as identity.
+    return String(url || "");
   }
 
   function get_error_debug_info(error) {
@@ -5755,187 +5781,86 @@
   async function try_fetch_cdn_asset(asset_path, play_scope, play_session, options = {}) {
     const normalized_asset_path = normalize_asset_path(asset_path);
     const normalized_play_scope = normalize_play_scope(play_scope);
-    if (!play_session?.session_id || play_session.force_encrypt || options.disable_cdn === true) {
+
+    // GitHub-raw mode: skip signed CDN manifest / Bunny entirely.
+    // Still require a play session so ownership gate stays intact.
+    if (!play_session?.session_id || options.disable_cdn === true) {
       return null;
     }
 
-    const fetch_cdn_entry = async (force_refresh = false) => {
-      const cdn_entry = await get_signed_cdn_asset_entry(normalized_asset_path, normalized_play_scope, play_session, { force_refresh });
-      if (!cdn_entry?.url) {
-        return null;
-      }
-      const cdn_debug_url_info = get_cdn_debug_url_info(cdn_entry.url);
-      log_loader_cache_debug("cdn download start", {
-        asset_path: normalized_asset_path,
-        play_scope: normalized_play_scope,
-        cdn_path: cdn_entry.cdn_path || "",
-        size: Number(cdn_entry.size) || 0,
-        url_info: cdn_debug_url_info,
-      });
-      let active_cdn_debug_url_info = cdn_debug_url_info;
-      let response;
-      const fetch_options = { cache: "no-store", mode: "cors" };
-      const primary_fetch_started_at = performance.now();
-      try {
-        response = await window.fetch(cdn_entry.url, fetch_options);
-        log_loader_cache_debug("cdn primary fetch response", {
-          asset_path: normalized_asset_path,
-          play_scope: normalized_play_scope,
-          cdn_path: cdn_entry.cdn_path || "",
-          duration_ms: Math.round(performance.now() - primary_fetch_started_at),
-          fetch_options,
-          url_info: cdn_debug_url_info,
-          response: get_response_debug_info(response),
-          browser: { online: navigator.onLine },
-        });
-      } catch (fetch_error) {
-        const fallback_url = get_408_fallback_cdn_url(cdn_entry.url);
-        if (!fallback_url) {
-          log_loader_cache_debug("cdn primary fetch threw without fallback", {
-            asset_path: normalized_asset_path,
-            play_scope: normalized_play_scope,
-            cdn_path: cdn_entry.cdn_path || "",
-            duration_ms: Math.round(performance.now() - primary_fetch_started_at),
-            fetch_options,
-            url_info: cdn_debug_url_info,
-            error: get_error_debug_info(fetch_error),
-            browser: { online: navigator.onLine },
-          });
-          throw fetch_error;
-        }
+    const github_url = build_github_raw_asset_url(normalized_asset_path, normalized_play_scope);
+    const url_info = get_cdn_debug_url_info(github_url);
 
-        const fallback_url_info = get_cdn_debug_url_info(fallback_url);
-        log_loader_cache_debug("cdn fetch threw; switching to fallback CDN once", {
-          asset_path: normalized_asset_path,
-          play_scope: normalized_play_scope,
-          cdn_path: cdn_entry.cdn_path || "",
-          duration_ms: Math.round(performance.now() - primary_fetch_started_at),
-          fetch_options,
-          error: get_error_debug_info(fetch_error),
-          primary_url_info: cdn_debug_url_info,
-          fallback_url_info,
-          browser: { online: navigator.onLine },
-        });
-        const fallback_fetch_started_at = performance.now();
-        try {
-          response = await window.fetch(fallback_url, fetch_options);
-          log_loader_cache_debug("cdn fallback fetch response", {
-            asset_path: normalized_asset_path,
-            play_scope: normalized_play_scope,
-            cdn_path: cdn_entry.cdn_path || "",
-            duration_ms: Math.round(performance.now() - fallback_fetch_started_at),
-            fetch_options,
-            url_info: fallback_url_info,
-            response: get_response_debug_info(response),
-            browser: { online: navigator.onLine },
-          });
-        } catch (fallback_fetch_error) {
-          log_loader_cache_debug("cdn fallback fetch threw", {
-            asset_path: normalized_asset_path,
-            play_scope: normalized_play_scope,
-            cdn_path: cdn_entry.cdn_path || "",
-            duration_ms: Math.round(performance.now() - fallback_fetch_started_at),
-            fetch_options,
-            primary_error: get_error_debug_info(fetch_error),
-            fallback_error: get_error_debug_info(fallback_fetch_error),
-            primary_url_info: cdn_debug_url_info,
-            fallback_url_info,
-            browser: { online: navigator.onLine },
-          });
-          throw fallback_fetch_error;
-        }
-        active_cdn_debug_url_info = fallback_url_info;
-      }
-      if (response.status === 408) {
-        const fallback_url = get_408_fallback_cdn_url(cdn_entry.url);
-        if (fallback_url) {
-          const fallback_url_info = get_cdn_debug_url_info(fallback_url);
-          log_loader_cache_debug("cdn returned 408; switching to fallback CDN", {
-            asset_path: normalized_asset_path,
-            play_scope: normalized_play_scope,
-            cdn_path: cdn_entry.cdn_path || "",
-            primary_url_info: cdn_debug_url_info,
-            fallback_url_info,
-          });
-          const fallback_408_started_at = performance.now();
-          response = await window.fetch(fallback_url, fetch_options);
-          log_loader_cache_debug("cdn 408 fallback fetch response", {
-            asset_path: normalized_asset_path,
-            play_scope: normalized_play_scope,
-            cdn_path: cdn_entry.cdn_path || "",
-            duration_ms: Math.round(performance.now() - fallback_408_started_at),
-            fetch_options,
-            url_info: fallback_url_info,
-            response: get_response_debug_info(response),
-            browser: { online: navigator.onLine },
-          });
-          active_cdn_debug_url_info = fallback_url_info;
-        }
-      }
-      if (!response.ok) {
-        log_loader_cache_debug("cdn download failed", {
-          asset_path: normalized_asset_path,
-          play_scope: normalized_play_scope,
-          cdn_path: cdn_entry.cdn_path || "",
-          status: response.status,
-          status_text: response.statusText,
-          url_info: active_cdn_debug_url_info,
-          fallback_origin_for_408: response.status === 408 ? fallback_cdn_origin_for_408 : "",
-        });
-        throw create_loader_error(`CDN returned ${response.status} for ${normalized_asset_path}.`, { retryable: retryable_play_asset_statuses.has(response.status), status_code: response.status });
-      }
-      const plaintext_bytes = await read_response_bytes_with_progress(response, options.on_progress, {
-        total_bytes_hint: Number(cdn_entry.size) || 0,
-      });
-      log_loader_cache_debug("cdn download complete", {
-        asset_path: normalized_asset_path,
-        play_scope: normalized_play_scope,
-        cdn_path: cdn_entry.cdn_path || "",
-        bytes: plaintext_bytes.byteLength,
-        url_info: cdn_debug_url_info,
-      });
-      return {
-        url: null,
-        source: "cdn",
-        downloaded_bytes: plaintext_bytes.byteLength,
-        decoded_bytes: plaintext_bytes.byteLength,
-        duration_ms: 0,
-        plaintext_bytes,
-        original_type: cdn_entry.content_type || response.headers.get("content-type") || "application/octet-stream",
-      };
-    };
+    log_loader_cache_debug("github raw download start", {
+      asset_path: normalized_asset_path,
+      play_scope: normalized_play_scope,
+      url_info,
+    });
 
+    const fetch_options = { cache: "no-store", mode: "cors" };
+    const started_at = performance.now();
+
+    let response;
     try {
-      try {
-        return await fetch_cdn_entry(false);
-      } catch (cdn_error) {
-        if (Number(cdn_error?.status_code) !== 403) {
-          throw cdn_error;
-        }
-
-        cdn_asset_manifest_cache.delete(get_cdn_asset_cache_key(normalized_asset_path, normalized_play_scope));
-        log_loader_cache_debug("CDN returned 403; requesting a fresh signed URL once", {
-          asset_path: normalized_asset_path,
-          play_scope: normalized_play_scope,
-          status_code: Number(cdn_error?.status_code) || 403,
-        });
-        console.warn(`CDN returned 403 for ${normalized_asset_path}; requesting a fresh signed URL once.`);
-        return await fetch_cdn_entry(true);
-      }
-    } catch (error) {
-      log_loader_cache_debug("cdn fetch failed final", {
+      response = await window.fetch(github_url, fetch_options);
+    } catch (fetch_error) {
+      log_loader_cache_debug("github raw fetch threw", {
         asset_path: normalized_asset_path,
         play_scope: normalized_play_scope,
-        error: get_error_debug_info(error),
-        browser: {
-          online: navigator.onLine,
-          page_url: window.location.href,
-          origin: window.location.origin,
-        },
+        duration_ms: Math.round(performance.now() - started_at),
+        error: get_error_debug_info(fetch_error),
+        url_info,
+        browser: { online: navigator.onLine },
       });
-      console.error(`CDN fetch failed for ${normalized_asset_path}; CDN-only delivery is enabled.`, error);
-      throw error;
+      throw create_loader_error(
+        `GitHub raw fetch failed for ${normalized_asset_path}: ${fetch_error?.message || fetch_error}`,
+        { retryable: true, status_code: 0 },
+      );
     }
+
+    log_loader_cache_debug("github raw fetch response", {
+      asset_path: normalized_asset_path,
+      play_scope: normalized_play_scope,
+      duration_ms: Math.round(performance.now() - started_at),
+      url_info,
+      response: get_response_debug_info(response),
+      browser: { online: navigator.onLine },
+    });
+
+    if (!response.ok) {
+      log_loader_cache_debug("github raw download failed", {
+        asset_path: normalized_asset_path,
+        play_scope: normalized_play_scope,
+        status: response.status,
+        status_text: response.statusText,
+        url_info,
+      });
+      throw create_loader_error(
+        `GitHub raw returned ${response.status} for ${normalized_asset_path}.`,
+        { retryable: retryable_play_asset_statuses.has(response.status), status_code: response.status },
+      );
+    }
+
+    const plaintext_bytes = await read_response_bytes_with_progress(response, options.on_progress, {
+      total_bytes_hint: 0,
+    });
+
+    log_loader_cache_debug("github raw download complete", {
+      asset_path: normalized_asset_path,
+      play_scope: normalized_play_scope,
+      bytes: plaintext_bytes.byteLength,
+      url_info,
+    });
+
+    return {
+      url: null,
+      source: "github-raw",
+      downloaded_bytes: plaintext_bytes.byteLength,
+      decoded_bytes: plaintext_bytes.byteLength,
+      duration_ms: Math.round(performance.now() - started_at),
+      plaintext_bytes,
+      original_type: response.headers.get("content-type") || "application/octet-stream",
+    };
   }
 
   async function fetch_chunked_protected_asset(asset_path, play_scope, play_session, options = {}) {
@@ -6120,7 +6045,7 @@
           }
         }
 
-        throw create_loader_error(`CDN-only delivery is enabled; refusing VPS asset fallback for ${normalized_asset_path}.`, { retryable: true });
+        throw create_loader_error(`GitHub-raw delivery is enabled; refusing VPS asset fallback for ${normalized_asset_path}.`, { retryable: true });
 
       } catch (error) {
         last_error = error;
